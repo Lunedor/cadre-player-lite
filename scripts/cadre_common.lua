@@ -15,6 +15,10 @@ local M = {}
 --------------------------------------------------------------------------------
 
 function M.bgr(hex)
+  if type(hex) ~= "string" or #hex < 6 then
+    mp.msg.warn("cadre_common: invalid color value '" .. tostring(hex) .. "', using fallback gray")
+    hex = "808080"
+  end
   return hex:sub(5, 6) .. hex:sub(3, 4) .. hex:sub(1, 2)
 end
 
@@ -343,6 +347,58 @@ function M.do_add_url()
     local was_empty = M.playlist_is_empty()
     mp.commandv("loadfile", url, was_empty and "replace" or "append-play")
     mp.osd_message("Added URL", 1.5)
+  end
+end
+
+--------------------------------------------------------------------------------
+-- SHARED MOUSE DISPATCH (single owner of MBTN_LEFT / MBTN_LEFT_DBL)
+--------------------------------------------------------------------------------
+
+local mbtn_left_listeners = {}
+local mbtn_left_dbl_listeners = {}
+local mbtn_bound = false
+
+function M.on_mbtn_left(name, handler)
+  mbtn_left_listeners[name] = handler
+end
+
+function M.on_mbtn_left_dbl(name, handler)
+  mbtn_left_dbl_listeners[name] = handler
+end
+
+local function dispatch_mbtn_left(event)
+  for _, handler in pairs(mbtn_left_listeners) do
+    handler(event)
+  end
+end
+
+local function dispatch_mbtn_left_dbl()
+  for _, handler in pairs(mbtn_left_dbl_listeners) do
+    handler()
+  end
+end
+
+function M.ensure_mbtn_bound()
+  local already = mp.get_property_native("user-data/cadre_common/mbtn_bound", false)
+  if already then return end
+  mp.set_property_native("user-data/cadre_common/mbtn_bound", true)
+  mp.add_key_binding("MBTN_LEFT", "cadre_shared_mbtn_left_" .. mp.get_script_name(),
+    dispatch_mbtn_left, { complex = true })
+  mp.add_key_binding("MBTN_LEFT_DBL", "cadre_shared_mbtn_left_dbl_" .. mp.get_script_name(),
+    dispatch_mbtn_left_dbl)
+end
+
+function M.setup_shared_mbtn_left(name, handler)
+  mp.register_script_message("cadre_mbtn_left_down", function() handler({ event = "down" }) end)
+  mp.register_script_message("cadre_mbtn_left_up", function() handler({ event = "up" }) end)
+
+  local claimed = mp.get_property_native("user-data/cadre_common/mbtn_owner", "")
+  if claimed == "" then
+    mp.set_property_native("user-data/cadre_common/mbtn_owner", name)
+    mp.add_key_binding("MBTN_LEFT", "cadre_mbtn_left_owner", function(event)
+      mp.commandv("script-message", "cadre_mbtn_left_" ..
+        ((event.event == "up" or event.event == "release") and "up" or "down"))
+    end, { complex = true })
   end
 end
 

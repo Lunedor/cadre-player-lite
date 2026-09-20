@@ -15,16 +15,16 @@ local common = dofile(common_path)
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
 local ICON_FONT = "Segoe MDL2 Assets"
-local TEXT = common.bgr(theme.color_text_tb or theme.color_text)
-local BARBG = common.bgr(theme.color_bar_bg_tb or theme.color_bar_bg)
-local DANGER = common.bgr(theme.color_danger)
-local HOVERBG = common.bgr(theme.color_hover_bg_tb or theme.color_hover_bg)
+local TEXT = common.bgr(theme.color_text_tb or theme.color_text or "F1F5F9")
+local BARBG = common.bgr(theme.color_bar_bg_tb or theme.color_bar_bg or "0F1115")
+local DANGER = common.bgr(theme.color_danger or "BA110C")
+local HOVERBG = common.bgr(theme.color_hover_bg_tb or theme.color_hover_bg or "181B22")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "18"
 
-local BAR_HEIGHT = 40
+local BAR_HEIGHT = 34
+local BUTTON_WIDTH = 40
 local HOVER_STRIP_HEIGHT = 12
 local HIDE_DELAY_SEC = 0.4
-local BUTTON_WIDTH = 46
 local MAXIMIZE_COOLDOWN_SEC = 0.35
 
 local ICON = {
@@ -76,6 +76,12 @@ local function publish_bounds(L)
   end
 end
 
+local function update_window_dragging()
+  if not bar_visible then return end
+  local L = get_layout()
+  local over_button = (mouse_x >= L.minimize_x1 and mouse_x < L.close_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT)
+  mp.set_property_bool("window-dragging", not over_button)
+end
 --------------------------------------------------------------------------------
 -- RENDER
 --------------------------------------------------------------------------------
@@ -111,7 +117,7 @@ local function render()
   local hover_close = mouse_x >= L.close_x1 and mouse_x < L.close_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
 
   if hover_min then
-    common.draw_rrect(ass, L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 0, HOVERBG, "20")
+    common.draw_rrect(ass, L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, HOVERBG, "20")
   end
   draw_icon(ass, ICON.minimize, L.minimize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "minimize", L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
@@ -146,7 +152,7 @@ local function render()
   end)
 
   if hover_close then
-    common.draw_rrect(ass, L.close_x1, 0, L.close_x1 + BUTTON_WIDTH, BAR_HEIGHT, 0, DANGER, "50")
+    common.draw_rrect(ass, L.close_x1, 0, L.close_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, DANGER, "70")
   end
   draw_icon(ass, ICON.close, L.close_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "close", L.close_x1, 0, L.close_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
@@ -218,6 +224,7 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
     mouse_y = pos.y or -1
   end
   vis.poll()
+  update_window_dragging()
   if bar_visible then render() end
 end)
 
@@ -239,5 +246,23 @@ mp.observe_property("osd-dimensions", "native", function(_, v)
 end)
 
 mp.observe_property("media-title", "string", function() if bar_visible then render() end end)
+
+local function on_mbtn_left(event)
+  if not bar_visible then return end
+  if event.event == "down" or event.event == "press" then
+    for _, b in ipairs(hitboxes) do
+      if point_in(mouse_x, mouse_y, b) then
+        b.cb()
+        render()
+        return
+      end
+    end
+  end
+end
+
+local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+if not osc_claimed then
+    mp.add_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
+end
 
 render()

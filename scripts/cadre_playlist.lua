@@ -17,20 +17,22 @@ local common = dofile(common_path)
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
 local ICON_FONT = "Material Icons Outlined"
-local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.color_icon or theme.color_icon_osc)
-local TEXT = common.bgr(theme.color_text_pl or theme.color_text)
-local DIM_COLOR = common.bgr(theme.color_dim_pl or theme.color_dim)
-local BARBG = common.bgr(theme.color_bar_bg_pl or theme.color_bar_bg)
+local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.color_icon or theme.color_icon_osc or "F2E8F0")
+local TEXT = common.bgr(theme.color_text_pl or theme.color_text or "F1F5F9")
+local DIM_COLOR = common.bgr(theme.color_dim_pl or theme.color_dim or "64748B")
+local BARBG = common.bgr(theme.color_bar_bg_pl or theme.color_bar_bg or "0F1115")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_pl or theme.alpha_bar_bg or "18"
-local DANGER = common.bgr(theme.color_danger_pl or theme.color_danger)
-local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or theme.color_scroll_fg)
-local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or theme.color_scroll_bg)
+local DANGER = common.bgr(theme.color_danger_pl or theme.color_danger or "BA110C")
+local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or theme.color_scroll_fg or "CBD5E1")
+local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or theme.color_scroll_bg or "1E222B")
+local SELECTED_COLOR = common.bgr(theme.color_selected_pl or "5A7A9A")
+local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or "5A7A9A")
 
-local ROW_HEIGHT = theme.row_height
-local RADIUS = theme.bar_radius
-local TOOLBAR_HEIGHT = theme.toolbar_height
-local HEADER_HEIGHT = theme.header_height
-local SEARCH_HEIGHT = theme.search_height
+local ROW_HEIGHT = theme.row_height or 40
+local RADIUS = theme.bar_radius or 20
+local TOOLBAR_HEIGHT = theme.toolbar_height or 40
+local HEADER_HEIGHT = theme.header_height or 40
+local SEARCH_HEIGHT = theme.search_height or 40
 
 local PANEL_WIDTH = 400
 local SIDE_INSET = 14
@@ -100,6 +102,63 @@ local add_menu_open = false
 local add_menu_geo = nil
 
 --------------------------------------------------------------------------------
+-- LAYOUT
+--------------------------------------------------------------------------------
+
+local function get_layout()
+  local x2 = screen_w - SIDE_INSET
+  local x1 = x2 - PANEL_WIDTH
+  local y1 = TOP_INSET
+  local y2 = screen_h - BOTTOM_INSET
+
+  local header_y2 = y1 + HEADER_HEIGHT
+  local search_y2 = header_y2 + (search_active and SEARCH_HEIGHT or 0)
+  local toolbar_y1 = y2 - TOOLBAR_HEIGHT
+  local list_y1 = search_y2 + 4
+  local list_y2 = toolbar_y1 - 4
+
+  return {
+    x1 = x1, x2 = x2, y1 = y1, y2 = y2,
+    header_y2 = header_y2,
+    search_y1 = header_y2, search_y2 = search_y2,
+    list_y1 = list_y1, list_y2 = list_y2,
+    toolbar_y1 = toolbar_y1,
+    list_h = list_y2 - list_y1,
+    visible_rows = math.floor((list_y2 - list_y1) / ROW_HEIGHT),
+  }
+end
+
+local function scroll_to_current()
+  if current_index < 0 then return end
+  local L = get_layout()
+  local filtered_pos = nil
+  for i, entry_wrap in ipairs(filtered_items) do
+    if entry_wrap.real_index == current_index then
+      filtered_pos = i
+      break
+    end
+  end
+  if not filtered_pos then return end
+
+  local max_scroll = math.max(0, #filtered_items - L.visible_rows)
+  if filtered_pos - 1 < scroll_offset then
+    scroll_offset = filtered_pos - 1
+  elseif filtered_pos > scroll_offset + L.visible_rows then
+    scroll_offset = filtered_pos - L.visible_rows
+  end
+  scroll_offset = math.max(0, math.min(scroll_offset, max_scroll))
+end
+
+local function compute_add_menu_geo(L)
+  local card_w, card_h = 190, 3 * 36 + 12
+  local card_x2 = L.x2 - 10
+  local card_x1 = card_x2 - card_w
+  local card_y2 = L.toolbar_y1 - 8
+  local card_y1 = card_y2 - card_h
+  return { cx = card_x1 + card_w/2, card_x1 = card_x1, card_x2 = card_x2, card_y1 = card_y1, card_y2 = card_y2, row_h = 36 }
+end
+
+--------------------------------------------------------------------------------
 -- HELPERS
 --------------------------------------------------------------------------------
 
@@ -145,6 +204,37 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_ico
 local function draw_text(ass, str, x, y, size, color, alpha, align, bold) common.draw_text(ass, str, x, y, size, color, alpha, align, bold) end
 local function draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) common.draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) end
 
+local osc_claimed_dbl = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+if not osc_claimed_dbl then
+    mp.add_key_binding("MBTN_LEFT_DBL", "cadre_playlist_mbtn_left_dbl", function()
+        local L = get_layout()
+        local in_panel = panel_visible and mouse_x >= L.x1 and mouse_x <= L.x2
+            and mouse_y >= L.y1 and mouse_y <= L.y2
+        if in_panel then return end
+        mp.commandv("cycle", "fullscreen")
+    end)
+end
+
+
+local function render_add_menu(ass, geo)
+  draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, ALPHA_BAR_BG)
+  local entries = {
+    { label = "Add file",   icon = ICON.add_file,   cb = common.do_add_file },
+    { label = "Add folder", icon = ICON.add_folder, cb = common.do_add_folder },
+    { label = "Add URL",    icon = ICON.add_url,    cb = common.do_add_url },
+  }
+  for i, e in ipairs(entries) do
+    local row_y1 = geo.card_y1 + 6 + (i - 1) * geo.row_h
+    local row_y2 = row_y1 + geo.row_h
+    local mid_y = (row_y1 + row_y2) / 2
+    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, "20")
+    draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, TEXT, "00", 4, false)
+    add_hitbox("pl_add_menu_" .. i, geo.card_x1, row_y1, geo.card_x2, row_y2, function()
+      add_menu_open = false
+      e.cb()
+    end)
+  end
+end
 --------------------------------------------------------------------------------
 -- PLAYLIST DATA
 --------------------------------------------------------------------------------
@@ -365,67 +455,19 @@ local function do_load_playlist()
     filter = "Playlist files|*.m3u8;*.m3u;*.pls|All files|*.*",
     multiselect = false,
   })
-  local path = paths
-  if not path then return end
+
+  if not paths or type(paths) ~= "table" or #paths == 0 then return end
+
+  local path = paths[1]
+  if type(path) ~= "string" or path == "" then
+      mp.msg.error("cadre_playlist: invalid path value: " .. tostring(path))
+      return
+  end
+
   mp.commandv("loadlist", path, load_append_mode and "append" or "replace")
   mp.osd_message("Playlist loaded: " .. basename(path), 2)
 end
 
---------------------------------------------------------------------------------
--- LAYOUT
---------------------------------------------------------------------------------
-
-local function get_layout()
-  local x2 = screen_w - SIDE_INSET
-  local x1 = x2 - PANEL_WIDTH
-  local y1 = TOP_INSET
-  local y2 = screen_h - BOTTOM_INSET
-
-  local header_y2 = y1 + HEADER_HEIGHT
-  local search_y2 = header_y2 + (search_active and SEARCH_HEIGHT or 0)
-  local toolbar_y1 = y2 - TOOLBAR_HEIGHT
-  local list_y1 = search_y2 + 4
-  local list_y2 = toolbar_y1 - 4
-
-  return {
-    x1 = x1, x2 = x2, y1 = y1, y2 = y2,
-    header_y2 = header_y2,
-    search_y1 = header_y2, search_y2 = search_y2,
-    list_y1 = list_y1, list_y2 = list_y2,
-    toolbar_y1 = toolbar_y1,
-    list_h = list_y2 - list_y1,
-    visible_rows = math.floor((list_y2 - list_y1) / ROW_HEIGHT),
-  }
-end
-
-local function compute_add_menu_geo(L)
-  local card_w, card_h = 190, 3 * 36 + 12
-  local card_x2 = L.x2 - 10
-  local card_x1 = card_x2 - card_w
-  local card_y2 = L.toolbar_y1 - 8
-  local card_y1 = card_y2 - card_h
-  return { cx = card_x1 + card_w/2, card_x1 = card_x1, card_x2 = card_x2, card_y1 = card_y1, card_y2 = card_y2, row_h = 36 }
-end
-
-local function render_add_menu(ass, geo)
-  draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, ALPHA_BAR_BG)
-  local entries = {
-    { label = "Add file",   icon = ICON.add_file,   cb = common.do_add_file },
-    { label = "Add folder", icon = ICON.add_folder, cb = common.do_add_folder },
-    { label = "Add URL",    icon = ICON.add_url,    cb = common.do_add_url },
-  }
-  for i, e in ipairs(entries) do
-    local row_y1 = geo.card_y1 + 6 + (i - 1) * geo.row_h
-    local row_y2 = row_y1 + geo.row_h
-    local mid_y = (row_y1 + row_y2) / 2
-    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, "20")
-    draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, TEXT, "00", 4, false)
-    add_hitbox("pl_add_menu_" .. i, geo.card_x1, row_y1, geo.card_x2, row_y2, function()
-      add_menu_open = false
-      e.cb()
-    end)
-  end
-end
 
 --------------------------------------------------------------------------------
 -- SHARED STATE PUBLISHING
@@ -535,10 +577,13 @@ function render()
     local is_selected = (real_idx == selected_index)
     local is_drop_target = drag.active and drag.current_target == real_idx
 
+    if is_selected then
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SELECTED_COLOR, "A8")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x1 + 9, row_y2, 1, SELECTED_COLOR, "20")
+    end
+
     if is_current then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_FG, "80")
-    elseif is_selected then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_BG, "00")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, NOW_PLAYING_COLOR, "88")
     end
 
     if is_drop_target then
@@ -724,6 +769,19 @@ local function on_mouse_move_internal()
   render()
 end
 
+local function update_window_dragging()
+    local osc_present = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+    if osc_present then return end
+
+    local should_drag = true
+    if panel_visible then
+        local L = get_layout()
+        local over_panel = mouse_x >= L.x1 and mouse_x <= L.x2 and mouse_y >= L.y1 and mouse_y <= L.y2
+        if over_panel then should_drag = false end
+    end
+    mp.set_property_bool("window-dragging", should_drag)
+end
+
 mp.observe_property("mouse-pos", "native", function(_, pos)
   if pos then
     mouse_x = pos.x or -1
@@ -738,6 +796,7 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
     local near_right_edge = (not in_osc_band) and (mouse_x >= sw - HOVER_STRIP_WIDTH)
 
     local over_panel = false
+    
     if panel_visible then
       local L = get_layout()
       over_panel = mouse_x >= L.x1 and mouse_x <= L.x2 and mouse_y >= L.y1 and mouse_y <= L.y2
@@ -749,6 +808,7 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
         hover_open = true
         panel_visible = true
         refresh_playlist()
+        scroll_to_current()
         render()
       end
     else
@@ -767,18 +827,27 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
   end
 
   on_mouse_move_internal()
+  update_window_dragging()
 end)
 
 local function on_mbtn_left(event)
   if not panel_visible then return end
   local L = get_layout()
-
+  
   if event.event == "down" or event.event == "press" then
     if add_menu_open and add_menu_geo then
-      if not (mouse_x >= add_menu_geo.card_x1 and mouse_x <= add_menu_geo.card_x2
-          and mouse_y >= add_menu_geo.card_y1 and mouse_y <= add_menu_geo.card_y2) then
-        add_menu_open = false
-        render()
+      local in_menu = mouse_x >= add_menu_geo.card_x1 and mouse_x <= add_menu_geo.card_x2
+          and mouse_y >= add_menu_geo.card_y1 and mouse_y <= add_menu_geo.card_y2
+
+      if in_menu then
+        for _, b in ipairs(hitboxes) do
+          if b.name:match("^pl_add_menu_") and point_in(mouse_x, mouse_y, b) then
+            b.cb()
+            render()
+            return
+          end
+        end
+        return
       end
     end
 
@@ -814,6 +883,14 @@ local function on_mbtn_left(event)
       end
     end
 
+    for _, b in ipairs(hitboxes) do
+      if point_in(mouse_x, mouse_y, b) then
+        b.cb()
+        render()
+        return
+      end
+    end
+
   elseif event.event == "up" or event.event == "release" then
     scrollbar_drag = false
     if drag.active then
@@ -828,8 +905,16 @@ local function on_mbtn_left(event)
   end
 end
 
-mp.register_script_message("playlist-mbtn-left-down", function() on_mbtn_left({ event = "down" }) end)
-mp.register_script_message("playlist-mbtn-left-up", function() on_mbtn_left({ event = "up" }) end)
+local function relay_down() on_mbtn_left({ event = "down" }) end
+local function relay_up() on_mbtn_left({ event = "up" }) end
+
+mp.register_script_message("playlist-mbtn-left-down", relay_down)
+mp.register_script_message("playlist-mbtn-left-up", relay_up)
+
+local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+if not osc_claimed then
+    mp.add_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
+end
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
 
@@ -842,7 +927,10 @@ local function set_pinned(v)
   hover_open = false
   panel_visible = is_open()
   if not panel_visible then update_wheel_bindings(false) end
-  if panel_visible then refresh_playlist() end
+  if panel_visible then
+    refresh_playlist()
+    scroll_to_current()
+  end
   render()
 end
 

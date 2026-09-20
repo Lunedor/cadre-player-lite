@@ -26,6 +26,8 @@ M.color_text = "F1F5F9"                 -- Primary labels, titles, and active te
 M.color_dim = "64748B"                  -- Secondary metadata, inactive indices, empty hints
 M.color_bar_bg = "0F1115"               -- Base surface background fill for containers
 M.alpha_bar_bg = "28"                   -- Base surface transparency ("00" solid -> "FF" hidden)
+M.color_selected_pl = "5A6A9A"          -- Selected (clicked) item highlight in playlist
+M.color_current_pl = "5A7A9A"           -- Now-playing item highlight in playlist
 
 --------------------------------------------------------------------------------
 -- COMPONENT OVERRIDES (_osc = Control Bar, _pl = Playlist, _tb = Titlebar)

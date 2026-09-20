@@ -27,13 +27,13 @@ end)
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
 local ICON_FONT = "Material Icons Outlined"
-local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.color_icon)
-local TEXT = common.bgr(theme.color_text_osc or theme.color_text)
-local BARBG = common.bgr(theme.color_bar_bg_osc or theme.color_bar_bg)
+local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.color_icon or "F2E8F0")
+local TEXT = common.bgr(theme.color_text_osc or theme.color_text or "F1F5F9")
+local BARBG = common.bgr(theme.color_bar_bg_osc or theme.color_bar_bg or "0F1115")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "18"
-local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.color_track_fg)
-local TRACK_BG = common.bgr(theme.color_track_bg_osc or theme.color_track_bg)
-local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or theme.color_slider_rail or theme.color_track_bg)
+local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.color_track_fg or "FFFFFF")
+local TRACK_BG = common.bgr(theme.color_track_bg_osc or theme.color_track_bg or "2B303C")
+local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or theme.color_slider_rail or theme.color_track_bg or "2B303C")
 
 local BAR_RADIUS = theme.bar_radius
 local BAR_HEIGHT = 75
@@ -461,7 +461,9 @@ local function on_mouse_move()
   local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
   local in_titlebar_area = point_in_titlebar_ui(mouse_x, mouse_y)
   local in_osd_area = point_in_own_ui(mouse_x, mouse_y) or in_playlist_area or in_titlebar_area
-  mp.set_property_bool("window-dragging", not in_osd_area)
+  if not in_titlebar_area then
+    mp.set_property_bool("window-dragging", not in_osd_area)
+  end
 
   if volume_dragging and popup_geo then
     local clamped_y = math.min(popup_geo.track_y2, math.max(popup_geo.track_y1, mouse_y))
@@ -505,54 +507,87 @@ end
 
 local function on_mbtn_left(event)
     if event.event == "down" or event.event == "press" then
-        mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
+      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
 
-        local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
-        local in_titlebar_area = point_in_titlebar_ui(mouse_x, mouse_y)
-        local in_osd_area = point_in_own_ui(mouse_x, mouse_y) or in_playlist_area or in_titlebar_area
+      local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
+      local in_titlebar_area = point_in_titlebar_ui(mouse_x, mouse_y)
+      local in_osd_area = point_in_own_ui(mouse_x, mouse_y) or in_playlist_area or in_titlebar_area
 
-        mp.commandv("script-message", "python-bridge", "osd-hit", tostring(in_osd_area))
+      mp.commandv("script-message", "python-bridge", "osd-hit", tostring(in_osd_area))
 
-        if in_titlebar_area then
-            mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-down")
-            return
-        end
+      if in_titlebar_area then
+          mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-down")
+          return
+      end
 
-        if in_playlist_area then
-            return
-        end
+      if in_playlist_area then
+          return
+      end
 
-        if not in_osd_area then
-            if not bar_visible then show_bar() end
-            return
-        end
+      if not in_osd_area then
+          if not bar_visible then show_bar() end
+          return
+      end
 
-        if not bar_visible then
-            show_bar()
-            return
-        end
+      if not bar_visible then
+          show_bar()
+          return
+      end
 
-        for _, b in ipairs(hitboxes) do
-            if point_in(mouse_x, mouse_y, b) then
-                if b.name == "seekbar" or b.name == "volume_track" then
-                    b.cb(mouse_x, mouse_y)
-                else
-                    b.cb()
-                end
-                render()
-                return
-            end
-        end
+      if volume_popup_open and popup_geo then
+          local in_popup = mouse_x >= popup_geo.card_x1 and mouse_x <= popup_geo.card_x2
+              and mouse_y >= popup_geo.card_y1 and mouse_y <= popup_geo.card_y2
+          if in_popup then
+              for _, b in ipairs(hitboxes) do
+                  if (b.name == "volume_track" or b.name == "volume_card_bg") and point_in(mouse_x, mouse_y, b) then
+                      b.cb(mouse_x, mouse_y)
+                      render()
+                      return
+                  end
+              end
+              return
+          else
+              volume_popup_open = false
+              render()
+          end
+      end
 
-        if volume_popup_open then volume_popup_open = false; render() end
-        if add_menu_open then add_menu_open = false; render() end
+      if add_menu_open and add_menu_geo then
+          local in_menu = mouse_x >= add_menu_geo.card_x1 and mouse_x <= add_menu_geo.card_x2
+              and mouse_y >= add_menu_geo.card_y1 and mouse_y <= add_menu_geo.card_y2
+          if in_menu then
+              for _, b in ipairs(hitboxes) do
+                  if b.name:match("^add_menu_") and point_in(mouse_x, mouse_y, b) then
+                      b.cb()
+                      render()
+                      return
+                  end
+              end
+              return
+          else
+              add_menu_open = false
+              render()
+          end
+      end
 
-    elseif event.event == "up" or event.event == "release" then
-        mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up")
-        mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-up")
-        volume_dragging = false
-        seek_dragging = false
-    end
+      for _, b in ipairs(hitboxes) do
+          if point_in(mouse_x, mouse_y, b) then
+              if b.name == "seekbar" or b.name == "volume_track" then
+                  b.cb(mouse_x, mouse_y)
+              else
+                  b.cb()
+              end
+              render()
+              return
+          end
+      end
+
+  elseif event.event == "up" or event.event == "release" then
+      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up")
+      mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-up")
+      volume_dragging = false
+      seek_dragging = false
+  end
 end
 
 mp.observe_property("mouse-pos", "native", function(_, pos)
@@ -562,6 +597,7 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
     on_mouse_move()
   end
 end)
+mp.set_property_native("user-data/cadre_osc/mbtn_bound", true)
 mp.add_key_binding("MBTN_LEFT", "cadre_mbtn_left", on_mbtn_left, { complex = true })
 mp.register_event("client-message", function() end)
 mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
