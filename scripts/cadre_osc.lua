@@ -34,17 +34,17 @@ local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "18"
 local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.color_track_fg or "FFFFFF")
 local TRACK_BG = common.bgr(theme.color_track_bg_osc or theme.color_track_bg or "2B303C")
 local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or theme.color_slider_rail or theme.color_track_bg or "2B303C")
-
+local ICON_DIM_A = theme.color_icon_dim or "60"
 local BAR_RADIUS = theme.bar_radius
+
 local BAR_HEIGHT = 75
 local BAR_SIDE_INSET = 16
 local BAR_BOTTOM_INSET = 30
 local BAR_MAX_WIDTH = 900
 local TIME_LABEL_OFFSET_Y = 14
-local SIDE_MARGIN = 40
+local SIDE_MARGIN = 20
 local AUTOHIDE_SEC = 0.5
 local ICON_SIZE = 26
-local ICON_DIM_A = "60"
 
 local ICON = {
   play = "\u{E037}",
@@ -231,7 +231,7 @@ local function render_add_menu(ass, geo)
     local row_y1 = geo.card_y1 + 6 + (i - 1) * geo.row_h
     local row_y2 = row_y1 + geo.row_h
     local mid_y = (row_y1 + row_y2) / 2
-    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, "20")
+    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, dim)
     common.draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, TEXT, "00", 4, false)
     add_hitbox("add_menu_" .. i, geo.card_x1, row_y1, geo.card_x2, row_y2, function()
       add_menu_open = false

@@ -13,7 +13,7 @@ local M = {}
 --------------------------------------------------------------------------------
 M.font_text = "Roboto"       -- Titlebar window control glyphs
 
-M.bar_radius = 20                       -- Corner rounding for floating pills/cards
+M.bar_radius = 00                       -- Corner rounding for floating pills/cards
 M.row_height = 40                       -- Playlist row item height in px
 M.header_height = 40                    -- Playlist header height in px
 M.toolbar_height = 40                   -- Playlist bottom toolbar height in px
@@ -26,8 +26,10 @@ M.color_text = "F1F5F9"                 -- Primary labels, titles, and active te
 M.color_dim = "64748B"                  -- Secondary metadata, inactive indices, empty hints
 M.color_bar_bg = "0F1115"               -- Base surface background fill for containers
 M.alpha_bar_bg = "28"                   -- Base surface transparency ("00" solid -> "FF" hidden)
-M.color_selected_pl = "5A6A9A"          -- Selected (clicked) item highlight in playlist
-M.color_current_pl = "5A7A9A"           -- Now-playing item highlight in playlist
+
+-- Redesign: Replaced mismatched blue with a unified, cohesive crimson/burgundy family
+M.color_current_pl = "BA110C"           -- NOW PLAYING: Matches your exact seekbar crimson red
+M.color_selected_pl = "4A0A08"          -- SELECTED/CLICKED: A deep, rich burgundy wine to contrast the active song
 
 --------------------------------------------------------------------------------
 -- COMPONENT OVERRIDES (_osc = Control Bar, _pl = Playlist, _tb = Titlebar)
@@ -49,19 +51,20 @@ M.alpha_bar_bg_pl = nil
 --------------------------------------------------------------------------------
 -- ICON TINTS
 --------------------------------------------------------------------------------
-M.color_icon = "F2E8F0"                 -- Default icon tint across general views
+M.color_icon = "FFFFFF"                 -- Default icon tint across general views
+M.color_icon_dim = "00"                 -- Dimmed icon tint across general views
 M.color_icon_osc = nil                  -- OSC-specific icon tint override
 M.color_icon_pl = nil                   -- Playlist-specific icon tint override
 
 --------------------------------------------------------------------------------
 -- TRACKS, RAILS & INTERACTIVE SURFACES
 --------------------------------------------------------------------------------
-M.color_track_fg = "FFFFFF"             -- Seekbar scrubber grab-handle head
+M.color_track_fg = "BA110C"             -- Seekbar scrubber grab-handle head
 M.color_track_bg = "2B303C"             -- Inactive seekbar background rail
 M.color_slider_rail = "2B303C"          -- Volume flyout vertical track rail
 M.color_scroll_fg = "CBD5E1"            -- Playlist scrollbar thumb handle
 M.color_scroll_bg = "1E222B"            -- Playlist scrollbar track background
 M.color_danger = "BA110C"               -- Delete / Recycle Bin action tint
-M.color_hover_bg = "181B22"             -- Row / interactive surface hover background tint
+M.color_hover_bg = "221414"             -- Row hover background tint (swapped from blue-grey to subtle warm dark-red)
 
 return M

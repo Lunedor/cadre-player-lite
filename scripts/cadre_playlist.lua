@@ -19,7 +19,7 @@ local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 local ICON_FONT = "Material Icons Outlined"
 local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.color_icon or theme.color_icon_osc or "F2E8F0")
 local TEXT = common.bgr(theme.color_text_pl or theme.color_text or "F1F5F9")
-local DIM_COLOR = common.bgr(theme.color_dim_pl or theme.color_dim or "64748B")
+local DIM = common.bgr(theme.color_dim_pl or theme.color_dim or "64748B")
 local BARBG = common.bgr(theme.color_bar_bg_pl or theme.color_bar_bg or "0F1115")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_pl or theme.alpha_bar_bg or "18"
 local DANGER = common.bgr(theme.color_danger_pl or theme.color_danger or "BA110C")
@@ -27,6 +27,7 @@ local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or theme.color_scroll_fg o
 local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or theme.color_scroll_bg or "1E222B")
 local SELECTED_COLOR = common.bgr(theme.color_selected_pl or "5A7A9A")
 local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or "5A7A9A")
+local ICON_DIM = theme.color_icon_dim or "60"
 
 local ROW_HEIGHT = theme.row_height or 40
 local RADIUS = theme.bar_radius or 20
@@ -43,6 +44,7 @@ local HOVER_STRIP_WIDTH = 18
 local HIDE_DELAY_SEC = 0.4
 local OSC_BOTTOM_EXCLUSION = 130
 
+math.randomseed(os.time())
 
 
 local ICON = {
@@ -227,7 +229,7 @@ local function render_add_menu(ass, geo)
     local row_y1 = geo.card_y1 + 6 + (i - 1) * geo.row_h
     local row_y2 = row_y1 + geo.row_h
     local mid_y = (row_y1 + row_y2) / 2
-    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, "20")
+    draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, ICON_DIM)
     draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, TEXT, "00", 4, false)
     add_hitbox("pl_add_menu_" .. i, geo.card_x1, row_y1, geo.card_x2, row_y2, function()
       add_menu_open = false
@@ -578,7 +580,7 @@ function render()
     local is_drop_target = drag.active and drag.current_target == real_idx
 
     if is_selected then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SELECTED_COLOR, "A8")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SELECTED_COLOR, "60")
       draw_rrect(ass, L.x1 + 6, row_y1, L.x1 + 9, row_y2, 1, SELECTED_COLOR, "20")
     end
 
@@ -596,7 +598,7 @@ function render()
 
     local idx_str = string.format("%02d", real_idx + 1)
     draw_text(ass, idx_str, L.x1 + 16, (row_y1 + row_y2) / 2, 10,
-      is_current and DIM or TEXT, is_current and "00" or "30", 4, is_current)
+      TEXT, "30", 4, is_current)
 
     local cached_duration = duration_cache[entry.filename]
     local dur_str = cached_duration and fmt_time(cached_duration) or ""
@@ -609,19 +611,19 @@ function render()
     local title = entry.title or basename(entry.filename or "")
     title = truncate_utf8(title, max_chars)
 
-    local title_color = is_current and DIM or TEXT
+    local title_color = TEXT
     draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, 14, title_color, "00", 4, is_current)
 
     local rx_right = L.x2 - 16 - SCROLLBAR_WIDTH
     if is_current then
       local paused = mp.get_property_bool("pause", false)
-      draw_icon(ass, paused and ICON.pause or ICON.play, rx_right, (row_y1 + row_y2) / 2, 14, TEXT, "00")
+      draw_icon(ass, paused and ICON.pause or ICON.play, rx_right, (row_y1 + row_y2) / 2, 14, TEXT, ICON_DIM)
       rx_right = rx_right - 24
     end
 
     if dur_str ~= "" then
       draw_text(ass, dur_str, rx_right, (row_y1 + row_y2) / 2, 11,
-        is_current and DIM or TEXT, is_current and "20" or "40", 6, false)
+        TEXT, "00", 6, false)
     end
 
     add_hitbox("row_" .. real_idx, L.x1 + 6, row_y1, L.x2 - 6, row_y2, function()
@@ -660,22 +662,22 @@ function render()
   add_hitbox("delete", rx - 14, ty - 14, rx + 14, ty + 14, delete_selected_to_recycle_bin)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.remove, rx, ty, 20, ICON_COLOR, "30")
+  draw_icon(ass, ICON.remove, rx, ty, 20, ICON_COLOR, ICON_DIM)
   add_hitbox("remove", rx - 14, ty - 14, rx + 14, ty + 14, remove_selected)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.save, rx, ty, 20, ICON_COLOR, "30")
+  draw_icon(ass, ICON.save, rx, ty, 20, ICON_COLOR, ICON_DIM)
   add_hitbox("save", rx - 14, ty - 14, rx + 14, ty + 14, do_save_playlist)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.load, rx, ty, 20, ICON_COLOR, "30")
+  draw_icon(ass, ICON.load, rx, ty, 20, ICON_COLOR, ICON_DIM)
   add_hitbox("load", rx - 14, ty - 14, rx + 14, ty + 14, function()
     load_append_mode = false
     do_load_playlist()
   end)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.add, rx, ty, 20, ICON_COLOR, "30")
+  draw_icon(ass, ICON.add, rx, ty, 20, ICON_COLOR, ICON_DIM)
   add_hitbox("pl_add", rx - 14, ty - 14, rx + 14, ty + 14, function()
     add_menu_open = not add_menu_open
   end)
@@ -896,6 +898,7 @@ local function on_mbtn_left(event)
     if drag.active then
       if drag.current_target ~= drag.from_index and drag.current_target >= 0 then
         mp.commandv("playlist-move", drag.from_index, drag.current_target)
+        selected_index = drag.current_target
       end
       drag.active = false
       drag.from_index = -1
