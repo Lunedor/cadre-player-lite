@@ -509,9 +509,9 @@ function render()
     local is_drop_target = drag.active and drag.current_target == real_idx
 
     if is_current then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_FG, "C0")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_FG, "80")
     elseif is_selected then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_BG, "E8")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SCROLL_BG, "00")
     end
 
     if is_drop_target then
