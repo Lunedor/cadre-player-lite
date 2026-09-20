@@ -441,6 +441,33 @@ local function publish_bounds(L)
   end
 end
 
+local function enable_search_bindings()
+  local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
+  for i = 1, #chars do
+    local c = chars:sub(i, i)
+    mp.add_forced_key_binding(c, "cadre_search_char_" .. c, function()
+      search_query = search_query .. c
+      rebuild_filtered()
+      render()
+    end, { repeatable = true })
+  end
+  mp.add_forced_key_binding("BS", "cadre_search_backspace", function()
+    if #search_query > 0 then
+      search_query = search_query:sub(1, -2)
+      rebuild_filtered()
+      render()
+    end
+  end, { repeatable = true })
+end
+
+local function disable_search_bindings()
+  local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
+  for i = 1, #chars do
+    mp.remove_key_binding("cadre_search_char_" .. chars:sub(i, i))
+  end
+  mp.remove_key_binding("cadre_search_backspace")
+end
+
 --------------------------------------------------------------------------------
 -- RENDER
 --------------------------------------------------------------------------------
@@ -803,34 +830,6 @@ end
 
 mp.register_script_message("playlist-mbtn-left-down", function() on_mbtn_left({ event = "down" }) end)
 mp.register_script_message("playlist-mbtn-left-up", function() on_mbtn_left({ event = "up" }) end)
-
-local function enable_search_bindings()
-  local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
-  for i = 1, #chars do
-    local c = chars:sub(i, i)
-    mp.add_forced_key_binding(c, "cadre_search_char_" .. c, function()
-      search_query = search_query .. c
-      rebuild_filtered()
-      render()
-    end, { repeatable = true })
-  end
-  mp.add_forced_key_binding("BS", "cadre_search_backspace", function()
-    if #search_query > 0 then
-      search_query = search_query:sub(1, -2)
-      rebuild_filtered()
-      render()
-    end
-  end, { repeatable = true })
-end
-
-local function disable_search_bindings()
-  local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
-  for i = 1, #chars do
-    mp.remove_key_binding("cadre_search_char_" .. chars:sub(i, i))
-  end
-  mp.remove_key_binding("cadre_search_backspace")
-end
-
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
 
