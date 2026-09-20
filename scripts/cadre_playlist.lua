@@ -204,18 +204,6 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_ico
 local function draw_text(ass, str, x, y, size, color, alpha, align, bold) common.draw_text(ass, str, x, y, size, color, alpha, align, bold) end
 local function draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) common.draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) end
 
-local osc_claimed_dbl = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-if not osc_claimed_dbl then
-    mp.add_key_binding("MBTN_LEFT_DBL", "cadre_playlist_mbtn_left_dbl", function()
-        local L = get_layout()
-        local in_panel = panel_visible and mouse_x >= L.x1 and mouse_x <= L.x2
-            and mouse_y >= L.y1 and mouse_y <= L.y2
-        if in_panel then return end
-        mp.commandv("cycle", "fullscreen")
-    end)
-end
-
-
 local function render_add_menu(ass, geo)
   draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, ALPHA_BAR_BG)
   local entries = {
@@ -354,16 +342,16 @@ end
 local function cycle_repeat()
   if repeat_mode == "off" then
     repeat_mode = "all"
-    mp.set_property("loop-playlist", "inf")
-    mp.set_property("loop-file", "no")
+    common.set_property_cached("loop-playlist", "inf")
+    common.set_property_cached("loop-file", "no")
   elseif repeat_mode == "all" then
     repeat_mode = "one"
-    mp.set_property("loop-playlist", "no")
-    mp.set_property("loop-file", "inf")
+    common.set_property_cached("loop-playlist", "no")
+    common.set_property_cached("loop-file", "inf")
   else
     repeat_mode = "off"
-    mp.set_property("loop-playlist", "no")
-    mp.set_property("loop-file", "no")
+    common.set_property_cached("loop-playlist", "no")
+    common.set_property_cached("loop-file", "no")
   end
   render()
 end
@@ -912,10 +900,31 @@ local function relay_up() on_mbtn_left({ event = "up" }) end
 mp.register_script_message("playlist-mbtn-left-down", relay_down)
 mp.register_script_message("playlist-mbtn-left-up", relay_up)
 
-local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-if not osc_claimed then
-    mp.add_forced_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
+local function update_mbtn_binding(name, osc_claimed)
+    if osc_claimed then
+        -- OSC is active, release the bindings so the OSD/Titlebar can be clicked
+        mp.remove_key_binding("cadre_playlist_mbtn_left")
+        mp.remove_key_binding("cadre_playlist_mbtn_left_dbl")
+    else
+        -- OSC is inactive, playlist takes control of the clicks
+        mp.add_forced_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
+        
+        mp.add_key_binding("MBTN_LEFT_DBL", "cadre_playlist_mbtn_left_dbl", function()
+            local L = get_layout()
+            local in_panel = panel_visible and mouse_x >= L.x1 and mouse_x <= L.x2
+                and mouse_y >= L.y1 and mouse_y <= L.y2
+            if in_panel then return end
+            mp.commandv("cycle", "fullscreen")
+        end)
+    end
 end
+
+-- Dynamically watch the property. This runs immediately on load, and every time the value changes.
+mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
+
+-- Leave your DEL bindings exactly as they are
+mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
+mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
 

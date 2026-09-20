@@ -135,14 +135,14 @@ local function render()
       if fake_maximized then
           fake_maximized = false
           is_maximized = false
-          mp.set_property("geometry", saved_geometry)
+          common.set_property_cached("geometry", saved_geometry)
       else
           saved_geometry = mp.get_property("geometry") or ""
           local wa = common.get_workarea()
           if wa then
               fake_maximized = true
               is_maximized = true
-              mp.set_property("geometry", wa)
+              common.set_property_cached("geometry", wa)
           else
               mp.commandv("cycle", "window-maximized")
           end

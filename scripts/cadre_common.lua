@@ -10,6 +10,22 @@ local font_family = theme.font_text or "sans-serif"
 
 local M = {}
 
+local property_cache = {}
+
+function M.set_property_cached(name, value)
+  if property_cache[name] == value then return end
+  
+  property_cache[name] = value
+  
+  if type(value) == "boolean" then
+    mp.set_property_bool(name, value)
+  elseif type(value) == "number" then
+    mp.set_property_number(name, value)
+  else
+    mp.set_property(name, value)
+  end
+end
+
 --------------------------------------------------------------------------------
 -- COLOR
 --------------------------------------------------------------------------------
