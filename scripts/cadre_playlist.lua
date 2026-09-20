@@ -516,7 +516,7 @@ function render()
 
     if is_drop_target then
       ass:new_event()
-      ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H00&\\bord0\\shad0}", BARBG))
+      ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H00&\\bord0\\shad0}", TEXT))
       ass:draw_start()
       ass:round_rect_cw(L.x1 + 6, row_y1 - 2, L.x2 - 6 - SCROLLBAR_WIDTH, row_y1, 1)
       ass:draw_stop()
