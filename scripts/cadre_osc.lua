@@ -263,6 +263,10 @@ local function render()
     add_menu_geo = nil
     return
   end
+  
+  position = position or 0
+  duration = duration or 0
+  volume = volume or 100
 
   local L = get_layout()
 
