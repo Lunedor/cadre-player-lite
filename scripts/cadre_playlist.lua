@@ -914,7 +914,7 @@ mp.register_script_message("playlist-mbtn-left-up", relay_up)
 
 local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
 if not osc_claimed then
-    mp.add_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
+    mp.add_forced_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
 end
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
@@ -964,11 +964,12 @@ mp.observe_property("duration", "number", function(_, v)
   end
 end)
 
-mp.observe_property("osd-dimensions", "native", function(_, v)
-  if v and v.w and v.h and v.w > 0 and v.h > 0 then
-    screen_w, screen_h = v.w, v.h
-    render()
-  end
+mp.observe_property("osd-dimensions", "native", function(name, val)
+  if not val then return end
+  screen_w = val.w
+  screen_h = val.h
+  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
+  render() 
 end)
 
 render()

@@ -606,7 +606,7 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
   end
 end)
 mp.set_property_native("user-data/cadre_osc/mbtn_bound", true)
-mp.add_key_binding("MBTN_LEFT", "cadre_mbtn_left", on_mbtn_left, { complex = true })
+mp.add_forced_key_binding("MBTN_LEFT", "cadre_mbtn_left", on_mbtn_left, { complex = true })
 mp.register_event("client-message", function() end)
 mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
   local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
@@ -620,11 +620,12 @@ end)
 -- PROPERTY OBSERVERS
 --------------------------------------------------------------------------------
 
-mp.observe_property("osd-dimensions", "native", function(_, v)
-  if v and v.w and v.h and v.w > 0 and v.h > 0 then
-    screen_w, screen_h = v.w, v.h
-    render()
-  end
+mp.observe_property("osd-dimensions", "native", function(name, val)
+  if not val then return end
+  screen_w = val.w
+  screen_h = val.h
+  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
+  render() 
 end)
 
 mp.observe_property("duration", "number", function(_, v) duration = v or 0; render() end)

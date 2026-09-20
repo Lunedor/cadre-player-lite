@@ -382,7 +382,7 @@ function M.ensure_mbtn_bound()
   local already = mp.get_property_native("user-data/cadre_common/mbtn_bound", false)
   if already then return end
   mp.set_property_native("user-data/cadre_common/mbtn_bound", true)
-  mp.add_key_binding("MBTN_LEFT", "cadre_shared_mbtn_left_" .. mp.get_script_name(),
+  mp.add_forced_key_binding("MBTN_LEFT", "cadre_shared_mbtn_left_" .. mp.get_script_name(),
     dispatch_mbtn_left, { complex = true })
   mp.add_key_binding("MBTN_LEFT_DBL", "cadre_shared_mbtn_left_dbl_" .. mp.get_script_name(),
     dispatch_mbtn_left_dbl)
@@ -395,7 +395,7 @@ function M.setup_shared_mbtn_left(name, handler)
   local claimed = mp.get_property_native("user-data/cadre_common/mbtn_owner", "")
   if claimed == "" then
     mp.set_property_native("user-data/cadre_common/mbtn_owner", name)
-    mp.add_key_binding("MBTN_LEFT", "cadre_mbtn_left_owner", function(event)
+    mp.add_forced_key_binding("MBTN_LEFT", "cadre_mbtn_left_owner", function(event)
       mp.commandv("script-message", "cadre_mbtn_left_" ..
         ((event.event == "up" or event.event == "release") and "up" or "down"))
     end, { complex = true })

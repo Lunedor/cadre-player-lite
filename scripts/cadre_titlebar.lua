@@ -20,7 +20,6 @@ local BARBG = common.bgr(theme.color_bar_bg_tb or theme.color_bar_bg or "0F1115"
 local DANGER = common.bgr(theme.color_danger or "BA110C")
 local HOVERBG = common.bgr(theme.color_hover_bg_tb or theme.color_hover_bg or "181B22")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "18"
-
 local BAR_HEIGHT = theme.bar_height_tb or 34
 local BUTTON_WIDTH = theme.button_width_tb or 40
 local HOVER_STRIP_HEIGHT = theme.hover_strip_height_tb or 12
@@ -238,11 +237,12 @@ mp.observe_property("fullscreen", "bool", function(_, v)
   end
 end)
 
-mp.observe_property("osd-dimensions", "native", function(_, v)
-  if v and v.w and v.h and v.w > 0 and v.h > 0 then
-    screen_w, screen_h = v.w, v.h
-    render()
-  end
+mp.observe_property("osd-dimensions", "native", function(name, val)
+  if not val then return end
+  screen_w = val.w
+  screen_h = val.h
+  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
+  render() 
 end)
 
 mp.observe_property("media-title", "string", function() if bar_visible then render() end end)
@@ -262,7 +262,7 @@ end
 
 local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
 if not osc_claimed then
-    mp.add_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
+    mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
 end
 
 render()
