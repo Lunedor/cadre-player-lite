@@ -470,7 +470,13 @@ function render()
   draw_icon(ass, ICON.search, search_icon_x, L.y1 + 20, 18, ICON_COLOR, search_active and "30" or "60")
   add_hitbox("toggle_search", search_icon_x - 14, L.y1 + 4, search_icon_x + 14, L.y1 + 34, function()
     search_active = not search_active
-    if not search_active then search_query = "" rebuild_filtered() end
+    if search_active then
+      enable_search_bindings()
+    else
+      disable_search_bindings()
+      search_query = ""
+      rebuild_filtered()
+    end
   end)
 
   if search_active then
@@ -803,20 +809,18 @@ mp.add_key_binding("Shift+l", "cadre_playlist_load_append", function()
   do_load_playlist()
 end)
 
-local function bind_search_keys()
+local function enable_search_bindings()
   local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
   for i = 1, #chars do
     local c = chars:sub(i, i)
     mp.add_forced_key_binding(c, "cadre_search_char_" .. c, function()
-      if search_active then
-        search_query = search_query .. c
-        rebuild_filtered()
-        render()
-      end
+      search_query = search_query .. c
+      rebuild_filtered()
+      render()
     end, { repeatable = true })
   end
   mp.add_forced_key_binding("BS", "cadre_search_backspace", function()
-    if search_active and #search_query > 0 then
+    if #search_query > 0 then
       search_query = search_query:sub(1, -2)
       rebuild_filtered()
       render()
@@ -824,9 +828,16 @@ local function bind_search_keys()
   end, { repeatable = true })
 end
 
+local function disable_search_bindings()
+  local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_."
+  for i = 1, #chars do
+    mp.remove_key_binding("cadre_search_char_" .. chars:sub(i, i))
+  end
+  mp.remove_key_binding("cadre_search_backspace")
+end
+
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
-bind_search_keys()
 
 --------------------------------------------------------------------------------
 -- VISIBILITY / BRIDGE

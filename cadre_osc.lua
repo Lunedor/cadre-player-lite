@@ -463,9 +463,6 @@ local function point_in_titlebar_ui(px, py)
 end
 
 local function on_mouse_move()
-  local x, y = mp.get_mouse_pos()
-  mouse_x, mouse_y = x or -1, y or -1
-
   local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
   local in_titlebar_area = point_in_titlebar_ui(mouse_x, mouse_y)
   local in_osd_area = point_in_own_ui(mouse_x, mouse_y) or in_playlist_area or in_titlebar_area
@@ -563,7 +560,13 @@ local function on_mbtn_left(event)
     end
 end
 
-mp.add_forced_key_binding("mouse_move", "cadre_mouse_move", on_mouse_move)
+mp.observe_property("mouse-pos", "native", function(_, pos)
+  if pos then
+    mouse_x = pos.x or -1
+    mouse_y = pos.y or -1
+    on_mouse_move()
+  end
+end)
 mp.add_key_binding("MBTN_LEFT", "cadre_mbtn_left", on_mbtn_left, { complex = true })
 mp.register_event("client-message", function() end)
 mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
