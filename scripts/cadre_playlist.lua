@@ -956,7 +956,7 @@ mp.register_script_message("playlist-next", function()
   if shuffle_on then advance_shuffled(1) else mp.commandv("playlist-next", "weak") end
 end)
 
-mp.observe_property("playlist", "native", function() refresh_playlist() render() end)
+mp.observe_property("playlist", "native", function() refresh_playlist() scroll_to_current() render() end)
 mp.observe_property("playlist-pos", "number", function(_, v)
   current_index = v or -1
   if panel_visible then render() end
