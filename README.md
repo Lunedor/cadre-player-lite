@@ -1,3 +1,5 @@
+![Sample Screen](cadre-player-lite.png)
+
 # Cadre UI for mpv
 
 A modular, custom graphical interface suite for the mpv media player. Cadre replaces the default UI with a desktop-first, neumorphic design featuring an advanced playlist manager, an interactive on-screen controller (OSC), and a custom titlebar.
