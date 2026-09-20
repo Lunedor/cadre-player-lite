@@ -21,11 +21,11 @@ local DANGER = common.bgr(theme.color_danger or "BA110C")
 local HOVERBG = common.bgr(theme.color_hover_bg_tb or theme.color_hover_bg or "181B22")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "18"
 
-local BAR_HEIGHT = 34
-local BUTTON_WIDTH = 40
-local HOVER_STRIP_HEIGHT = 12
-local HIDE_DELAY_SEC = 0.4
-local MAXIMIZE_COOLDOWN_SEC = 0.35
+local BAR_HEIGHT = theme.bar_height_tb or 34
+local BUTTON_WIDTH = theme.button_width_tb or 40
+local HOVER_STRIP_HEIGHT = theme.hover_strip_height_tb or 12
+local HIDE_DELAY_SEC = theme.hide_delay_sec_tb or 0.4
+local MAXIMIZE_COOLDOWN_SEC = theme.maximize_cooldown_sec_tb or 0.35
 
 local ICON = {
   minimize = "\u{E921}",

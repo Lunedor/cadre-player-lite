@@ -35,16 +35,23 @@ local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.color_track_fg or 
 local TRACK_BG = common.bgr(theme.color_track_bg_osc or theme.color_track_bg or "2B303C")
 local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or theme.color_slider_rail or theme.color_track_bg or "2B303C")
 local ICON_DIM_A = theme.color_icon_dim or "60"
-local BAR_RADIUS = theme.bar_radius
-
-local BAR_HEIGHT = 75
-local BAR_SIDE_INSET = 16
-local BAR_BOTTOM_INSET = 30
-local BAR_MAX_WIDTH = 900
-local TIME_LABEL_OFFSET_Y = 14
-local SIDE_MARGIN = 20
-local AUTOHIDE_SEC = 0.5
-local ICON_SIZE = 26
+local BAR_RADIUS = theme.bar_radius or 0
+local BAR_SIDE_INSET = theme.bar_side_inset or 16
+local BAR_BOTTOM_INSET = theme.bar_bottom_inset or 30
+local AUTOHIDE_SEC = theme.bar_autohide_sec or 0.5
+local THUMB_W = theme.thumb_width or 4  -- Half-width of the current position indicator
+local THUMB_H = theme.thumb_height or 8  -- Half-height of the current position indicator
+local THUMB_RADIUS = theme.thumb_radius or 2    -- Controls the shape (0 = square, 6 = circle)
+local THUMB_COLOR = common.bgr(theme.thumb_color or theme.color_track_fg_osc or theme.color_track_fg or "FFFFFF")
+local BAR_HEIGHT = theme.bar_height or 90
+local SEEK_Y_OFFSET = theme.seek_y_offset or 15   -- Padding from the top of the background to the seek bar
+local ICON_ROW_OFFSET = theme.icon_row_offset or 60 -- Padding from the top of the background to the icons
+local ICON_SPACING = theme.icon_spacing or 38    -- Horizontal space between each icon
+local SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 10
+local SEEK_HEIGHT_HOVER = theme.seek_height_hover or 12
+local TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 15
+local SIDE_MARGIN = theme.side_margin or 20
+local ICON_SIZE = theme.icon_size or 26
 
 local ICON = {
   play = "\u{E037}",
@@ -113,6 +120,7 @@ local function get_layout()
   local natural_x1 = BAR_SIDE_INSET
   local natural_x2 = screen_w - BAR_SIDE_INSET
   local natural_w = natural_x2 - natural_x1
+  local BAR_MAX_WIDTH = theme.max_bar_width or screen_w
 
   local pill_x1, pill_x2
   if natural_w > BAR_MAX_WIDTH then
@@ -127,9 +135,9 @@ local function get_layout()
   local pill_y2 = screen_h - BAR_BOTTOM_INSET
   local pill_y1 = pill_y2 - BAR_HEIGHT
 
-  local seek_y = pill_y1 + 15
-  local row_y = pill_y1 + 55
-  local spacing = 38
+  local seek_y = pill_y1 + SEEK_Y_OFFSET
+  local row_y = pill_y1 + ICON_ROW_OFFSET
+  local spacing = ICON_SPACING
 
   local bar_x1, bar_x2 = pill_x1 + SIDE_MARGIN, pill_x2 - SIDE_MARGIN
   local icon_half = ICON_SIZE / 2
@@ -265,7 +273,7 @@ local function render()
   ass:draw_stop()
 
   local hovering_seek = (mouse_y >= L.seek_y - 8 and mouse_y <= L.seek_y + 8 and mouse_x >= L.pill_x1 + SIDE_MARGIN and mouse_x <= L.pill_x2 - SIDE_MARGIN)
-  local track_h = hovering_seek and 10 or 7
+  local track_h = hovering_seek and SEEK_HEIGHT_HOVER or SEEK_HEIGHT_NORMAL
   local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
   local bar_w = bar_x2 - bar_x1
 
@@ -277,7 +285,7 @@ local function render()
     common.draw_rrect(ass, bar_x1, L.seek_y - track_h / 2, filled_x, L.seek_y + track_h / 2, track_h / 2, TRACK_FG, "00")
   end
 
-  common.draw_rrect(ass, filled_x - 3, L.seek_y - 6, filled_x + 3, L.seek_y + 6, 3, TRACK_FG, "00")
+  common.draw_rrect(ass, filled_x - THUMB_W, L.seek_y - THUMB_H, filled_x + THUMB_W, L.seek_y + THUMB_H, THUMB_RADIUS, THUMB_COLOR, "00")
 
   add_hitbox("seekbar", bar_x1, L.seek_y - 10, bar_x2, L.seek_y + 10, function(px)
     seek_dragging = true

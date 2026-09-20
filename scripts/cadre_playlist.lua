@@ -28,21 +28,19 @@ local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or theme.color_scroll_bg o
 local SELECTED_COLOR = common.bgr(theme.color_selected_pl or "5A7A9A")
 local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or "5A7A9A")
 local ICON_DIM = theme.color_icon_dim or "60"
-
 local ROW_HEIGHT = theme.row_height or 40
 local RADIUS = theme.bar_radius or 20
 local TOOLBAR_HEIGHT = theme.toolbar_height or 40
 local HEADER_HEIGHT = theme.header_height or 40
 local SEARCH_HEIGHT = theme.search_height or 40
-
-local PANEL_WIDTH = 400
-local SIDE_INSET = 14
-local TOP_INSET = 54
-local BOTTOM_INSET = 110
-local SCROLLBAR_WIDTH = 6
-local HOVER_STRIP_WIDTH = 18
-local HIDE_DELAY_SEC = 0.4
-local OSC_BOTTOM_EXCLUSION = 130
+local PANEL_WIDTH = theme.panel_width or 400
+local SIDE_INSET = theme.side_inset or 14
+local TOP_INSET = theme.top_inset or 54
+local BOTTOM_INSET = theme.bottom_inset or 110
+local SCROLLBAR_WIDTH = theme.scrollbar_width or 6
+local HOVER_STRIP_WIDTH = theme.hover_strip_width or 18
+local HIDE_DELAY_SEC = theme.hide_delay_sec or 0.4
+local OSC_BOTTOM_EXCLUSION = theme.osc_bottom_exclusion or 130
 
 math.randomseed(os.time())
 
