@@ -25,6 +25,7 @@ local BUTTON_WIDTH = theme.button_width_tb or 40
 local HOVER_STRIP_HEIGHT = theme.hover_strip_height_tb or 12
 local HIDE_DELAY_SEC = theme.hide_delay_sec_tb or 0.4
 local MAXIMIZE_COOLDOWN_SEC = theme.maximize_cooldown_sec_tb or 0.35
+local TITLE_FONT_SIZE = theme.title_font_size_tb or 16
 
 local ICON = {
   minimize = "\u{E921}",
@@ -109,7 +110,7 @@ local function render()
   common.draw_rrect(ass, L.x1, L.y1, L.x2, L.y2, 0, BARBG, ALPHA_BAR_BG)
 
   local title = mp.get_property("media-title") or mp.get_property("filename") or "No file"
-  common.draw_text(ass, title, 16, BAR_HEIGHT / 2, 13, TEXT, "00", 4, false)
+  common.draw_text(ass, title, 16, BAR_HEIGHT / 2, TITLE_FONT_SIZE, TEXT, "00", 4, false)
 
   local hover_min = mouse_x >= L.minimize_x1 and mouse_x < L.minimize_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
   local hover_max = mouse_x >= L.maximize_x1 and mouse_x < L.maximize_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT

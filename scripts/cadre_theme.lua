@@ -53,6 +53,7 @@ M.button_width_tb = 40                    -- Width of the titlebar buttons
 M.hover_strip_height_tb = 12              -- Height of the hover strip in the titlebar
 M.hide_delay_sec_tb = 0.4                 -- Delay before auto-hiding the titlebar
 M.maximize_cooldown_sec_tb = 0.35        -- Cooldown time for the maximize action
+M.title_font_size_tb = 16                  -- Font size for the titlebar text
 
 --------------------------------------------------------------------------------
 -- GLOBAL BASE PALETTE (Fallback for all components unless overridden)
