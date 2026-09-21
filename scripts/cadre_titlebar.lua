@@ -1,5 +1,11 @@
 --[[
 cadre_titlebar.lua
+- Button side is a setting: titlebar_button_side = "left" | "right"
+  "left"  = macOS-style order: close, minimize, maximize/zoom (left to right),
+            title centered in the remaining space to the right of the buttons.
+  "right" = classic Windows order: minimize, maximize, close, ending at the
+            right edge (default), title left-aligned near x=16.
+- titlebar_show_mode = "auto" | "always" still controls startup visibility.
 ]]
 
 local mp = require 'mp'
@@ -27,6 +33,14 @@ local HIDE_DELAY_SEC = theme.hide_delay_sec_tb or 0.4
 local MAXIMIZE_COOLDOWN_SEC = theme.maximize_cooldown_sec_tb or 0.35
 local TITLE_FONT_SIZE = theme.title_font_size_tb or 16
 
+-- "auto"   -> hover-to-show near the top edge, then auto-hides after HIDE_DELAY_SEC (default)
+-- "always" -> titlebar is shown permanently from startup; "t" still toggles it live
+local SHOW_MODE = theme.titlebar_show_mode_tb or theme.titlebar_show_mode or "auto"
+
+-- "left"  -> macOS-style: close, minimize, maximize from the left edge
+-- "right" -> classic Windows: minimize, maximize, close ending at the right edge (default)
+local BUTTON_SIDE = theme.titlebar_button_side_tb or theme.titlebar_button_side or "right"
+
 local ICON = {
   minimize = "\u{E921}",
   maximize = "\u{E922}",
@@ -53,13 +67,31 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha)
   common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha)
 end
 
+-- Layout branches on BUTTON_SIDE. Also returns title_x and title_align so
+-- the title text is positioned/aligned correctly for each mode.
 local function get_layout()
-  return {
-    x1 = 0, y1 = 0, x2 = screen_w, y2 = BAR_HEIGHT,
-    close_x1 = screen_w - BUTTON_WIDTH,
-    maximize_x1 = screen_w - BUTTON_WIDTH * 2,
-    minimize_x1 = screen_w - BUTTON_WIDTH * 3,
-  }
+  if BUTTON_SIDE == "left" then
+    -- macOS order left-to-right: close, minimize, maximize/zoom.
+    return {
+      x1 = 0, y1 = 0, x2 = screen_w, y2 = BAR_HEIGHT,
+      close_x1 = 0,
+      minimize_x1 = BUTTON_WIDTH,
+      maximize_x1 = BUTTON_WIDTH * 2,
+      -- Center the title in the space to the right of the button cluster,
+      -- mirroring macOS's centered-title look instead of hugging the buttons.
+      title_x = BUTTON_WIDTH * 3 + ((screen_w - BUTTON_WIDTH * 3) / 2),
+      title_align = "center",
+    }
+  else
+    return {
+      x1 = 0, y1 = 0, x2 = screen_w, y2 = BAR_HEIGHT,
+      close_x1 = screen_w - BUTTON_WIDTH,
+      maximize_x1 = screen_w - BUTTON_WIDTH * 2,
+      minimize_x1 = screen_w - BUTTON_WIDTH * 3,
+      title_x = 16,
+      title_align = "left",
+    }
+  end
 end
 
 --------------------------------------------------------------------------------
@@ -79,7 +111,9 @@ end
 local function update_window_dragging()
   if not bar_visible then return end
   local L = get_layout()
-  local over_button = (mouse_x >= L.minimize_x1 and mouse_x < L.close_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT)
+  local group_x1 = math.min(L.close_x1, L.minimize_x1, L.maximize_x1)
+  local group_x2 = math.max(L.close_x1, L.minimize_x1, L.maximize_x1) + BUTTON_WIDTH
+  local over_button = (mouse_x >= group_x1 and mouse_x < group_x2 and mouse_y < BAR_HEIGHT)
   mp.set_property_bool("window-dragging", not over_button)
 end
 --------------------------------------------------------------------------------
@@ -110,7 +144,8 @@ local function render()
   common.draw_rrect(ass, L.x1, L.y1, L.x2, L.y2, 0, BARBG, ALPHA_BAR_BG)
 
   local title = mp.get_property("media-title") or mp.get_property("filename") or "No file"
-  common.draw_text(ass, title, 16, BAR_HEIGHT / 2, TITLE_FONT_SIZE, TEXT, "00", 4, false)
+  local align_code = (L.title_align == "center") and 5 or 4
+  common.draw_text(ass, title, L.title_x, BAR_HEIGHT / 2, TITLE_FONT_SIZE, TEXT, "00", align_code, false)
 
   local hover_min = mouse_x >= L.minimize_x1 and mouse_x < L.minimize_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
   local hover_max = mouse_x >= L.maximize_x1 and mouse_x < L.maximize_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
@@ -129,26 +164,26 @@ local function render()
   end
   draw_icon(ass, is_maximized and ICON.restore or ICON.maximize, L.maximize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "maximize", L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
-      local now = mp.get_time()
-      if now - last_maximize_toggle_time < MAXIMIZE_COOLDOWN_SEC then return end
-      last_maximize_toggle_time = now
+    local now = mp.get_time()
+    if now - last_maximize_toggle_time < MAXIMIZE_COOLDOWN_SEC then return end
+    last_maximize_toggle_time = now
 
-      if fake_maximized then
-          fake_maximized = false
-          is_maximized = false
-          common.set_property_cached("geometry", saved_geometry)
+    if fake_maximized then
+      fake_maximized = false
+      is_maximized = false
+      common.set_property_cached("geometry", saved_geometry)
+    else
+      saved_geometry = mp.get_property("geometry") or ""
+      local wa = common.get_workarea()
+      if wa then
+        fake_maximized = true
+        is_maximized = true
+        common.set_property_cached("geometry", wa)
       else
-          saved_geometry = mp.get_property("geometry") or ""
-          local wa = common.get_workarea()
-          if wa then
-              fake_maximized = true
-              is_maximized = true
-              common.set_property_cached("geometry", wa)
-          else
-              mp.commandv("cycle", "window-maximized")
-          end
+        mp.commandv("cycle", "window-maximized")
       end
-      render()
+    end
+    render()
   end)
 
   if hover_close then
@@ -179,6 +214,10 @@ local vis = common.new_visibility({
   on_hide = function() bar_visible = false; render() end,
 })
 
+if SHOW_MODE == "always" then
+  vis.toggle_pinned()
+end
+
 --------------------------------------------------------------------------------
 -- INPUT
 --------------------------------------------------------------------------------
@@ -198,24 +237,24 @@ local pending_hitbox = nil
 local click_in_progress = false
 
 mp.register_script_message("titlebar-mbtn-left-down", function()
-    if click_in_progress then return end
-    click_in_progress = true
-    pending_hitbox = nil
-    for _, b in ipairs(hitboxes) do
-        if point_in(mouse_x, mouse_y, b) then
-            pending_hitbox = b
-            break
-        end
+  if click_in_progress then return end
+  click_in_progress = true
+  pending_hitbox = nil
+  for _, b in ipairs(hitboxes) do
+    if point_in(mouse_x, mouse_y, b) then
+      pending_hitbox = b
+      break
     end
+  end
 end)
 
 mp.register_script_message("titlebar-mbtn-left-up", function()
-    if pending_hitbox then
-        pending_hitbox.cb()
-        render()
-    end
-    pending_hitbox = nil
-    mp.add_timeout(0.25, function() click_in_progress = false end)
+  if pending_hitbox then
+    pending_hitbox.cb()
+    render()
+  end
+  pending_hitbox = nil
+  mp.add_timeout(0.25, function() click_in_progress = false end)
 end)
 
 mp.observe_property("mouse-pos", "native", function(_, pos)
@@ -242,8 +281,7 @@ mp.observe_property("osd-dimensions", "native", function(name, val)
   if not val then return end
   screen_w = val.w
   screen_h = val.h
-  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
-  render() 
+  render()
 end)
 
 mp.observe_property("media-title", "string", function() if bar_visible then render() end end)
@@ -263,7 +301,7 @@ end
 
 local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
 if not osc_claimed then
-    mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
+  mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
 end
 
 render()
