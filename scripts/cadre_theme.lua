@@ -17,7 +17,7 @@ M.font_text = "Roboto"                  -- Titlebar window control glyphs
 M.max_bar_width = 900                   -- Maximum width for floating pills/cards, if you want to make it as full width comment out this line
 M.bar_side_inset = 0                    -- Side inset for floating pills/cards
 M.bar_bottom_inset = 10                 -- Bottom inset for floating pills/cards
-M.bar_radius = 8                       -- Corner rounding for floating pills/cards
+M.bar_radius = 8                        -- Corner rounding for floating pills/cards
 M.row_height = 40                       -- Playlist row item height in px
 M.header_height = 40                    -- Playlist header height in px
 M.toolbar_height = 40                   -- Playlist bottom toolbar height in px
@@ -48,12 +48,14 @@ M.hide_delay_sec = 0.4                  -- Delay before auto-hiding the panel
 M.osc_bottom_exclusion = 130            -- Bottom exclusion area for the OSC
 
 -- TITLEBAR LAYOUT --
-M.bar_height_tb = 34                      -- Height of the titlebar
-M.button_width_tb = 40                    -- Width of the titlebar buttons
-M.hover_strip_height_tb = 12              -- Height of the hover strip in the titlebar
-M.hide_delay_sec_tb = 0.4                 -- Delay before auto-hiding the titlebar
-M.maximize_cooldown_sec_tb = 0.35        -- Cooldown time for the maximize action
-M.title_font_size_tb = 16                  -- Font size for the titlebar text
+M.bar_height_tb = 34                    -- Height of the titlebar
+M.button_width_tb = 40                  -- Width of the titlebar buttons
+M.hover_strip_height_tb = 12            -- Height of the hover strip in the titlebar
+M.hide_delay_sec_tb = 0.4               -- Delay before auto-hiding the titlebar
+M.maximize_cooldown_sec_tb = 0.35       -- Cooldown time for the maximize action
+M.title_font_size_tb = 16               -- Font size for the titlebar text
+M.titlebar_show_mode_tb = "always"      -- "auto"   -> hover-to-show or "always" -> titlebar is shown permanently from startup 
+M.titlebar_button_side = "right"        -- left for macOS-style (close, minimize, maximize from left edge) or "right" (default, classic Windows) 
 
 --------------------------------------------------------------------------------
 -- GLOBAL BASE PALETTE (Fallback for all components unless overridden)
