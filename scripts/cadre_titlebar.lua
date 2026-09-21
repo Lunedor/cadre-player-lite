@@ -20,25 +20,21 @@ local common = dofile(common_path)
 --------------------------------------------------------------------------------
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
-local ICON_FONT = "Segoe MDL2 Assets"
-local TEXT = common.bgr(theme.color_text_tb or theme.color_text or "F1F5F9")
-local BARBG = common.bgr(theme.color_bar_bg_tb or theme.color_bar_bg or "0F1115")
-local DANGER = common.bgr(theme.color_danger or "BA110C")
-local HOVERBG = common.bgr(theme.color_hover_bg_tb or theme.color_hover_bg or "181B22")
-local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "18"
-local BAR_HEIGHT = theme.bar_height_tb or 34
-local BUTTON_WIDTH = theme.button_width_tb or 40
-local HOVER_STRIP_HEIGHT = theme.hover_strip_height_tb or 12
-local HIDE_DELAY_SEC = theme.hide_delay_sec_tb or 0.4
-local MAXIMIZE_COOLDOWN_SEC = theme.maximize_cooldown_sec_tb or 0.35
-local TITLE_FONT_SIZE = theme.title_font_size_tb or 16
+local ICON_FONT = theme.font_icon_tb or theme.font_icon or "Segoe MDL2 Assets"
+local TEXT = common.bgr(theme.color_text_tb or theme.text_color or "E2E8F0")
+local TITLE_FONT_SIZE = theme.title_font_size_tb or theme.title_font_size or theme.font_size or 16
+local BARBG = common.bgr(theme.color_bar_bg_tb or theme.surface_color or "07080B")
+local DANGER = common.bgr(theme.color_danger_tb or theme.danger_color or "EF4444")
+local HOVERBG = common.bgr(theme.color_hover_bg_tb or "181C26")
+local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "38"
 
--- "auto"   -> hover-to-show near the top edge, then auto-hides after HIDE_DELAY_SEC (default)
--- "always" -> titlebar is shown permanently from startup; "t" still toggles it live
+local BAR_HEIGHT = theme.bar_height_tb or 36
+local BUTTON_WIDTH = theme.button_width_tb or 44
+local HOVER_STRIP_HEIGHT = theme.hover_strip_height_tb or 10
+local HIDE_DELAY_SEC = theme.hide_delay_sec_tb or 0.35
+local MAXIMIZE_COOLDOWN_SEC = theme.maximize_cooldown_sec_tb or 0.3
+
 local SHOW_MODE = theme.titlebar_show_mode_tb or theme.titlebar_show_mode or "auto"
-
--- "left"  -> macOS-style: close, minimize, maximize from the left edge
--- "right" -> classic Windows: minimize, maximize, close ending at the right edge (default)
 local BUTTON_SIDE = theme.titlebar_button_side_tb or theme.titlebar_button_side or "right"
 
 local ICON = {

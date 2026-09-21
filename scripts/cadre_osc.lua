@@ -26,32 +26,49 @@ end)
 
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
-local ICON_FONT = "Material Icons Outlined"
-local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.color_icon or "F2E8F0")
-local TEXT = common.bgr(theme.color_text_osc or theme.color_text or "F1F5F9")
-local BARBG = common.bgr(theme.color_bar_bg_osc or theme.color_bar_bg or "0F1115")
-local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "18"
-local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.color_track_fg or "FFFFFF")
-local TRACK_BG = common.bgr(theme.color_track_bg_osc or theme.color_track_bg or "2B303C")
-local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or theme.color_slider_rail or theme.color_track_bg or "2B303C")
-local ICON_DIM_A = theme.color_icon_dim or "60"
-local BAR_RADIUS = theme.bar_radius or 0
-local BAR_SIDE_INSET = theme.bar_side_inset or 16
-local BAR_BOTTOM_INSET = theme.bar_bottom_inset or 30
-local AUTOHIDE_SEC = theme.bar_autohide_sec or 0.5
-local THUMB_W = theme.thumb_width or 4  -- Half-width of the current position indicator
-local THUMB_H = theme.thumb_height or 8  -- Half-height of the current position indicator
-local THUMB_RADIUS = theme.thumb_radius or 2    -- Controls the shape (0 = square, 6 = circle)
-local THUMB_COLOR = common.bgr(theme.thumb_color or theme.color_track_fg_osc or theme.color_track_fg or "FFFFFF")
-local BAR_HEIGHT = theme.bar_height or 90
-local SEEK_Y_OFFSET = theme.seek_y_offset or 15   -- Padding from the top of the background to the seek bar
-local ICON_ROW_OFFSET = theme.icon_row_offset or 60 -- Padding from the top of the background to the icons
-local ICON_SPACING = theme.icon_spacing or 38    -- Horizontal space between each icon
-local SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 10
-local SEEK_HEIGHT_HOVER = theme.seek_height_hover or 12
-local TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 15
-local SIDE_MARGIN = theme.side_margin or 20
-local ICON_SIZE = theme.icon_size or 26
+local ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined"
+local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.text_color or "F8FAFC")
+local TEXT = common.bgr(theme.color_text_osc or theme.text_color or "F8FAFC")
+local FONT_SIZE = theme.font_size_osc or theme.font_size or 14
+local BARBG = common.bgr(theme.color_bar_bg_osc or theme.surface_color or "0D1117")
+local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "1C"
+local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.accent_color or "63B8FF")
+local TRACK_BG = common.bgr(theme.color_track_bg_osc or "303845")
+local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or "1E293B")
+local THUMB_COLOR = common.bgr(theme.thumb_color or theme.color_track_fg_osc or theme.accent_color or "F8FAFC")
+local ICON_DIM_A = theme.alpha_icon_dim_osc or theme.alpha_icon_dim or "60"
+
+local BAR_HEIGHT = theme.bar_height_osc or theme.bar_height or 100
+local BAR_SIDE_INSET = theme.bar_side_inset_osc or theme.bar_side_inset or 0
+local BAR_BOTTOM_INSET = theme.bar_bottom_inset_osc or theme.bar_bottom_inset or 0
+local BAR_RADIUS = theme.bar_radius_osc or theme.bar_radius or 0
+local AUTOHIDE_SEC = theme.bar_autohide_sec_osc or theme.bar_autohide_sec or 0.4
+
+local THUMB_W = theme.thumb_width or 4
+local THUMB_H = theme.thumb_height or 10
+local THUMB_RADIUS = theme.thumb_radius or 5
+local SEEK_Y_OFFSET = theme.seek_y_offset or 14
+local SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 6
+local SEEK_HEIGHT_HOVER = theme.seek_height_hover or 10
+local SIDE_MARGIN = theme.side_margin or 24
+
+local ICON_ROW_OFFSET = theme.icon_row_offset or 60
+local ICON_SPACING = theme.icon_spacing or 36
+local ICON_SIZE = theme.icon_size or 24
+local TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16
+
+local CHAPTER_TOOLTIP_FONT = theme.font_chapter_tooltip or theme.font_text or "Inter"
+local CHAPTER_MARK_COLOR = common.bgr(theme.color_chapter_mark or theme.background_color or "0A0C10")
+local CHAPTER_MARK_ALPHA = theme.alpha_chapter_mark or "20"
+local CHAPTER_MARK_W = theme.chapter_mark_width or 2
+local CHAPTER_HOVER_PX = theme.chapter_hover_px or 8
+local CHAPTER_TOOLTIP_FONT_SIZE = theme.chapter_tooltip_size or 18
+local CHAPTER_TOOLTIP_OFFSET_Y = theme.chapter_tooltip_offset_y or 36
+local CHAPTER_TOOLTIP_BG_COLOR = common.bgr(theme.chapter_tooltip_bg_color or theme.background_color or "0A0C10")
+local CHAPTER_TOOLTIP_BG_ALPHA = theme.chapter_tooltip_bg_alpha or "30"
+local CHAPTER_TOOLTIP_RADIUS = theme.chapter_tooltip_radius or 8
+local CHAPTER_TOOLTIP_PAD_X = theme.chapter_tooltip_pad_x or 8
+local CHAPTER_TOOLTIP_PAD_Y = theme.chapter_tooltip_pad_y or 10
 
 local ICON = {
   play = "\u{E037}",
@@ -68,6 +85,41 @@ local ICON = {
   add_folder = "\u{E2CC}",
   add_url = "\u{E157}",
 }
+
+--------------------------------------------------------------------------------
+-- YOUTUBE CHAPTER LOADER
+--------------------------------------------------------------------------------
+
+local function load_youtube_chapters()
+  local path = mp.get_property("path")
+    if not path then return end
+        if not (path:find("youtube%.com") or path:find("youtu%.be")) then return end
+
+        local res = mp.command_native({
+            name = "subprocess",
+            playback_only = false,
+            capture_stdout = true,
+            args = {"yt-dlp", "-J", "--no-warnings", "--quiet", path}
+        })
+
+        if res and res.status == 0 and res.stdout then
+            local json = utils.parse_json(res.stdout)
+            if json and json.chapters then
+                local yt_chapters = {}
+                for i, ch in ipairs(json.chapters) do
+                    yt_chapters[#yt_chapters + 1] = {
+                    time = ch.start_time,
+                    title = ch.title or ("Chapter " .. i)
+                }
+                end
+            if #yt_chapters > 0 then
+                mp.set_property_native("chapter-list", yt_chapters)
+            end
+        end
+    end
+end
+
+mp.register_event("file-loaded", load_youtube_chapters)
 
 --------------------------------------------------------------------------------
 -- STATE
@@ -94,6 +146,9 @@ local hitboxes = {}
 local popup_geo = nil
 local add_menu_geo = nil
 
+local chapters = {}
+local hovered_chapter = nil
+
 --------------------------------------------------------------------------------
 -- HELPERS
 --------------------------------------------------------------------------------
@@ -108,9 +163,65 @@ local function fmt_time(t)
   return string.format("%02d:%02d", m, s)
 end
 
+local function utf8_char_count(str)
+    local _, count = str:gsub("[^\128-\191]", "")
+    return count
+end
+
 local function add_hitbox(name, x1, y1, x2, y2, cb) common.add_hitbox(hitboxes, name, x1, y1, x2, y2, cb) end
 local function point_in(px, py, b) return common.point_in(px, py, b) end
 local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha) end
+
+local function normalize_chapters(raw)
+    local out = {}
+    if type(raw) ~= "table" then return out end
+    for i, c in ipairs(raw) do
+        local t = c.time
+        if type(t) == "number" then
+            out[#out + 1] = {
+                time = t,
+                title = (c.title and c.title ~= "" and c.title) or ("Chapter " .. i),
+            }
+        end
+    end
+    table.sort(out, function(a, b) return a.time < b.time end)
+    return out
+end
+
+-- Given a duration/time ratio → pixel x on the seek bar
+local function ratio_to_x(bar_x1, bar_w, ratio)
+    return bar_x1 + bar_w * math.min(1, math.max(0, ratio))
+end
+
+local function draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, seek_y, track_h, dur)
+    if not dur or dur <= 0 or #chapters == 0 then return end
+    local half_h = track_h / 2
+    for _, c in ipairs(chapters) do
+        -- Skip chapter "0" start marker (YouTube doesn't draw a separator at t=0)
+        if c.time > 0 and c.time < dur then
+            local cx = ratio_to_x(bar_x1, bar_w, c.time / dur)
+            -- keep marks fully inside the bar bounds
+            local mx1 = math.max(bar_x1, cx - CHAPTER_MARK_W)
+            local mx2 = math.min(bar_x2, cx + CHAPTER_MARK_W)
+            if mx2 > mx1 then
+                common.draw_rrect(ass, mx1, seek_y - half_h, mx2, seek_y + half_h, 0, CHAPTER_MARK_COLOR, CHAPTER_MARK_ALPHA)
+            end
+        end
+    end
+end
+
+local function find_hovered_chapter(bar_x1, bar_w, dur, px)
+    if not dur or dur <= 0 or #chapters == 0 then return nil end
+    for _, c in ipairs(chapters) do
+        if c.time > 0 and c.time < dur then
+            local cx = ratio_to_x(bar_x1, bar_w, c.time / dur)
+            if math.abs(px - cx) <= CHAPTER_HOVER_PX then
+                return c
+            end
+        end
+    end
+    return nil
+end
 
 --------------------------------------------------------------------------------
 -- LAYOUT
@@ -204,7 +315,7 @@ local function render_volume_popup(ass, geo)
   ass:round_rect_cw(geo.cx - 6, fill_y1 - 6, geo.cx + 6, fill_y1 + 6, 6)
   ass:draw_stop()
 
-  common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 10, 14, TEXT, "10", 2, false)
+  common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 10, FONT_SIZE, TEXT, "10", 2, false)
 
   add_hitbox("volume_track", geo.cx - 14, geo.track_y1 - 12, geo.cx + 14, geo.track_y2 + 12, function(px, py)
     volume_dragging = true
@@ -287,15 +398,68 @@ local function render()
   local filled_x = bar_x1 + bar_w * ratio
   if filled_x > bar_x1 then
     common.draw_rrect(ass, bar_x1, L.seek_y - track_h / 2, filled_x, L.seek_y + track_h / 2, track_h / 2, TRACK_FG, "00")
-  end
+  end  
+
+  draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, L.seek_y, track_h, duration)
 
   common.draw_rrect(ass, filled_x - THUMB_W, L.seek_y - THUMB_H, filled_x + THUMB_W, L.seek_y + THUMB_H, THUMB_RADIUS, THUMB_COLOR, "00")
+
+  if hovering_seek and hovered_chapter and hovered_chapter.title then
+    local title_len = utf8_char_count(hovered_chapter.title)
+
+    local char_w = CHAPTER_TOOLTIP_FONT_SIZE * 0.50
+    local text_w = title_len * char_w
+
+    local pad_x = CHAPTER_TOOLTIP_PAD_X or 6
+    local pad_y = CHAPTER_TOOLTIP_PAD_Y or 3
+
+    local pill_w = text_w + pad_x * 2
+    local pill_h = CHAPTER_TOOLTIP_FONT_SIZE + pad_y * 2
+
+    local max_pill_w = (bar_x2 - bar_x1) - 12
+    pill_w = math.min(pill_w, max_pill_w)
+
+    local half_w = pill_w / 2
+    local target_x = math.min(
+        bar_x2 - half_w - 6,
+        math.max(bar_x1 + half_w + 6, mouse_x)
+    )
+
+    local center_y = L.seek_y - CHAPTER_TOOLTIP_OFFSET_Y
+    local box_x1 = target_x - half_w
+    local box_x2 = target_x + half_w
+    local box_y1 = center_y - pill_h / 2
+    local box_y2 = center_y + pill_h / 2
+
+    common.draw_rrect(
+        ass,
+        box_x1,
+        box_y1,
+        box_x2,
+        box_y2,
+        CHAPTER_TOOLTIP_RADIUS,
+        CHAPTER_TOOLTIP_BG_COLOR,
+        CHAPTER_TOOLTIP_BG_ALPHA
+    )
+
+    common.draw_text(
+        ass,
+        hovered_chapter.title,
+        target_x,
+        center_y,
+        CHAPTER_TOOLTIP_FONT_SIZE,
+        TEXT,
+        "00",
+        5,
+        false
+    )
+  end
 
   add_hitbox("seekbar", bar_x1, L.seek_y - 10, bar_x2, L.seek_y + 10, function(px)
     seek_dragging = true
     if duration and duration > 0 then
-      local r = (px - bar_x1) / bar_w
-      mp.commandv("seek", math.min(1, math.max(0, r)) * duration, "absolute")
+    local r = (px - bar_x1) / bar_w
+    mp.commandv("seek", math.min(1, math.max(0, r)) * duration, "absolute")
     end
   end)
 
@@ -322,8 +486,8 @@ local function render()
   end)
 
   local time_label_y = L.seek_y + TIME_LABEL_OFFSET_Y + 3
-  common.draw_text(ass, fmt_time(position), bar_x1, time_label_y, 16, TEXT, "10", 4, false)
-  common.draw_text(ass, fmt_time(duration), bar_x2, time_label_y, 16, TEXT, "10", 6, false)
+  common.draw_text(ass, fmt_time(position), bar_x1, time_label_y, FONT_SIZE, TEXT, "10", 4, false)
+  common.draw_text(ass, fmt_time(duration), bar_x2, time_label_y, FONT_SIZE, TEXT, "10", 6, false)
 
   draw_icon(ass, (muted or volume == 0) and ICON.volume_off or ICON.volume_up, L.volume_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
   add_hitbox("volume", L.volume_x - 16, L.row_y - 16, L.volume_x + 16, L.row_y + 16, function()
@@ -504,6 +668,23 @@ local function on_mouse_move()
 
   update_thumbnail_preview()
 
+  local function update_hovered_chapter()
+    local L = get_layout()
+    local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
+    local hovering_seek = (mouse_y >= L.seek_y - 10 and mouse_y <= L.seek_y + 10
+        and mouse_x >= bar_x1 and mouse_x <= bar_x2)
+
+    local new_hovered = nil
+    if hovering_seek then
+        new_hovered = find_hovered_chapter(bar_x1, bar_x2 - bar_x1, duration, mouse_x)
+    end
+
+    if new_hovered ~= hovered_chapter then
+        hovered_chapter = new_hovered
+        if bar_visible then render() end
+    end
+end
+update_hovered_chapter()
   local hovering_hitbox = false
   for _, b in ipairs(hitboxes) do
     if point_in(mouse_x, mouse_y, b) then hovering_hitbox = true break end
@@ -637,6 +818,28 @@ mp.observe_property("time-pos", "number", function(_, v) position = v or 0; if b
 mp.observe_property("pause", "bool", function(_, v) paused = v; render() end)
 mp.observe_property("mute", "bool", function(_, v) muted = v; render() end)
 mp.observe_property("volume", "number", function(_, v) volume = v or 100; render() end)
+
+mp.observe_property("chapter-list", "native", function(_, raw)
+    chapters = normalize_chapters(raw)
+    hovered_chapter = nil
+    render()
+end)
+
+mp.register_event("playback-restart", function()
+    local raw = mp.get_property_native("chapter-list", {})
+    local normalized = normalize_chapters(raw)
+    if #normalized ~= #chapters then
+        chapters = normalized
+        render()
+    end
+end)
+
+mp.register_event("file-loaded", function()
+    local existing = mp.get_property_native("chapter-list", {})
+    if #existing == 0 then
+    load_youtube_chapters()
+    end
+end)
 
 mp.observe_property("path", "string", function(_, v)
   file_loaded = (v ~= nil and v ~= "")

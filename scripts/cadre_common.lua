@@ -6,7 +6,7 @@ local mp = require 'mp'
 local utils = require 'mp.utils'
 local msg = require 'mp.msg'
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
-local font_family = theme.font_text or "sans-serif"
+local UI_FONT = theme.font_ui or theme.font_text or "Inter" or "Segoe UI"
 
 local M = {}
 
@@ -76,17 +76,14 @@ function M.draw_icon(ass, icon_font, glyph, cx, cy, size, color, alpha)
   ))
 end
 
--- At top of cadre_common.lua (if not already present):
-local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
-local UI_FONT = theme.font_ui or theme.font_text or "Segoe UI"
-
-function M.draw_text(ass, str, x, y, size, color, alpha, align, bold)
-  ass:new_event()
-  local b = bold and "\\b1" or "\\b0"
-  ass:append(string.format(
-    "{\\pos(%d,%d)\\an%d\\fn%s\\fs%d\\1c&H%s&\\1a&H%s&\\bord0\\shad0%s}%s",
-    x, y, align or 4, UI_FONT, size, color, alpha or "00", b, str
-  ))
+function M.draw_text(ass, str, x, y, size, color, alpha, align, bold, font)
+    ass:new_event()
+    local b = bold and "\\b1" or "\\b0"
+    local f = font or UI_FONT
+    ass:append(string.format(
+        "{\\pos(%d,%d)\\an%d\\fn%s\\fs%d\\1c&H%s&\\1a&H%s&\\bord0\\shad0%s}%s",
+        x, y, align or 4, f, size, color, alpha or "00", b, str
+    ))
 end
 
 function M.draw_rrect(ass, x1, y1, x2, y2, r, color, alpha)

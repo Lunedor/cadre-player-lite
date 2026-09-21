@@ -16,31 +16,35 @@ local common = dofile(common_path)
 
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
-local ICON_FONT = "Material Icons Outlined"
-local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.color_icon or theme.color_icon_osc or "F2E8F0")
-local TEXT = common.bgr(theme.color_text_pl or theme.color_text or "F1F5F9")
-local DIM = common.bgr(theme.color_dim_pl or theme.color_dim or "64748B")
-local BARBG = common.bgr(theme.color_bar_bg_pl or theme.color_bar_bg or "0F1115")
+local ICON_FONT = theme.font_icon_pl or theme.font_icon or "Material Icons Outlined"
+local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.text_color or "CBD5E1")
+local TEXT = common.bgr(theme.color_text_pl or theme.text_color or "F8FAFC")
+local FONT_SIZE = theme.font_size or theme.font_size_pl or 14
+local TITLE_FONT_SIZE = theme.title_font_size_pl or theme.title_font_size or theme.font_size or 16
+local DIM = common.bgr(theme.color_dim_pl or theme.dim_color or "64748B")
+local BARBG = common.bgr(theme.color_bar_bg_pl or theme.surface_color or "0B0E14")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_pl or theme.alpha_bar_bg or "18"
-local DANGER = common.bgr(theme.color_danger_pl or theme.color_danger or "BA110C")
-local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or theme.color_scroll_fg or "CBD5E1")
-local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or theme.color_scroll_bg or "1E222B")
-local SELECTED_COLOR = common.bgr(theme.color_selected_pl or "5A7A9A")
-local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or "5A7A9A")
-local ICON_DIM = theme.color_icon_dim or "60"
-local ROW_HEIGHT = theme.row_height or 40
-local RADIUS = theme.bar_radius or 20
-local TOOLBAR_HEIGHT = theme.toolbar_height or 40
-local HEADER_HEIGHT = theme.header_height or 40
-local SEARCH_HEIGHT = theme.search_height or 40
-local PANEL_WIDTH = theme.panel_width or 400
-local SIDE_INSET = theme.side_inset or 14
-local TOP_INSET = theme.top_inset or 54
-local BOTTOM_INSET = theme.bottom_inset or 110
-local SCROLLBAR_WIDTH = theme.scrollbar_width or 6
-local HOVER_STRIP_WIDTH = theme.hover_strip_width or 18
-local HIDE_DELAY_SEC = theme.hide_delay_sec or 0.4
-local OSC_BOTTOM_EXCLUSION = theme.osc_bottom_exclusion or 130
+local DANGER = common.bgr(theme.color_danger_pl or theme.danger_color or "EF4444")
+local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or "475569")
+local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or "0F172A")
+local SELECTED_COLOR = common.bgr(theme.color_selected_pl or theme.accent_color or "63B8FF")
+local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or theme.accent_color or "63B8FF")
+local ICON_DIM_A = theme.alpha_icon_dim_pl or theme.alpha_icon_dim or "60"
+
+local ROW_HEIGHT = theme.row_height_pl or theme.row_height or 42
+local RADIUS = theme.bar_radius_pl or theme.bar_radius or 20
+local TOOLBAR_HEIGHT = theme.toolbar_height_pl or theme.toolbar_height or 42
+local HEADER_HEIGHT = theme.header_height_pl or theme.header_height or 42
+local SEARCH_HEIGHT = theme.search_height_pl or theme.search_height or 40
+local PANEL_WIDTH = theme.panel_width_pl or theme.panel_width or 420
+local SIDE_INSET = theme.side_inset_pl or theme.side_inset or 16
+local TOP_INSET = theme.top_inset_pl or theme.top_inset or 48
+local BOTTOM_INSET = theme.bottom_inset_pl or theme.bottom_inset or 115
+
+local SCROLLBAR_WIDTH = theme.scrollbar_width_pl or theme.scrollbar_width or 4
+local HOVER_STRIP_WIDTH = theme.hover_strip_width_pl or theme.hover_strip_width or 16
+local HIDE_DELAY_SEC = theme.hide_delay_sec_pl or theme.hide_delay_sec or 0.35
+local OSC_BOTTOM_EXCLUSION = theme.osc_bottom_exclusion_pl or theme.osc_bottom_exclusion or 125
 
 math.randomseed(os.time())
 
@@ -520,8 +524,8 @@ function render()
   draw_rrect(ass, L.x1, L.y1, L.x2, L.y2, RADIUS, BARBG, ALPHA_BAR_BG)
 
   local count_str = #items == 1 and "1 item" or (#items .. " items")
-  draw_text(ass, "Playlist", L.x1 + 16, L.y1 + 14, 16, TEXT, "00", 4, true)
-  draw_text(ass, count_str, L.x1 + 16, L.y1 + 30, 14, TEXT, "20", 4, false)
+  draw_text(ass, "Playlist", L.x1 + 16, L.y1 + 14, TITLE_FONT_SIZE, TEXT, "00", 4, true)
+  draw_text(ass, count_str, L.x1 + 16, L.y1 + 30, TITLE_FONT_SIZE - 2, TEXT, "20", 4, false)
 
   local search_icon_x = L.x2 - 24
   draw_icon(ass, ICON.search, search_icon_x, L.y1 + 20, 18, ICON_COLOR, search_active and "30" or "60")
@@ -539,7 +543,7 @@ function render()
   if search_active then
     draw_rrect(ass, L.x1 + 12, L.search_y1 + 2, L.x2 - 12, L.search_y2 - 4, 12, BARBG, ALPHA_BAR_BG)
     local display_q = search_query == "" and "Search playlist..." or search_query
-    draw_text(ass, display_q, L.x1 + 22, (L.search_y1 + L.search_y2) / 2, 14,
+    draw_text(ass, display_q, L.x1 + 22, (L.search_y1 + L.search_y2) / 2, TITLE_FONT_SIZE - 2,
       search_query == "" and DIM or TEXT, "10", 4, false)
   end
 
@@ -547,8 +551,8 @@ function render()
   scroll_offset = math.max(0, math.min(scroll_offset, max_scroll))
 
   if #filtered_items == 0 then
-    draw_text(ass, "Playlist is empty", (L.x1 + L.x2) / 2, (L.list_y1 + L.list_y2) / 2 - 8, 16, TEXT, "30", 5, false)
-    draw_text(ass, "Use + below to add files", (L.x1 + L.x2) / 2, (L.list_y1 + L.list_y2) / 2 + 12, 14, TEXT, "50", 5, false)
+    draw_text(ass, "Playlist is empty", (L.x1 + L.x2) / 2, (L.list_y1 + L.list_y2) / 2 - 8, TITLE_FONT_SIZE, TEXT, "30", 5, false)
+    draw_text(ass, "Use + below to add files", (L.x1 + L.x2) / 2, (L.list_y1 + L.list_y2) / 2 + 12, TITLE_FONT_SIZE - 2, TEXT, "50", 5, false)
   end
 
   for row = 0, L.visible_rows - 1 do
@@ -598,7 +602,7 @@ function render()
     title = truncate_utf8(title, max_chars)
 
     local title_color = TEXT
-    draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, 14, title_color, "00", 4, is_current)
+    draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, FONT_SIZE, title_color, "00", 4, is_current)
 
     local rx_right = L.x2 - 16 - SCROLLBAR_WIDTH
     if is_current then
@@ -919,10 +923,10 @@ local function update_mbtn_binding(name, osc_claimed)
     end
 end
 
--- Dynamically watch the property. This runs immediately on load, and every time the value changes.
+-- Dynamically watching the property.
 mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
 
--- Leave your DEL bindings exactly as they are
+-- DEL bindings
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
 mp.add_key_binding("Shift+DEL", "cadre_playlist_shift_delete", delete_selected_to_recycle_bin)
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
@@ -956,7 +960,7 @@ mp.register_script_message("playlist-next", function()
   if shuffle_on then advance_shuffled(1) else mp.commandv("playlist-next", "weak") end
 end)
 
-mp.observe_property("playlist", "native", function() refresh_playlist() scroll_to_current() render() end)
+mp.observe_property("playlist", "native", function() refresh_playlist() render() end)
 mp.observe_property("playlist-pos", "number", function(_, v)
   current_index = v or -1
   if panel_visible then render() end
