@@ -6,7 +6,7 @@ local mp = require 'mp'
 local utils = require 'mp.utils'
 local msg = require 'mp.msg'
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
-local UI_FONT = theme.font_ui or theme.font_text or "Inter" or "Segoe UI"
+local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 
 local M = {}
 

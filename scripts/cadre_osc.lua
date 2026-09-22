@@ -65,7 +65,7 @@ local CHAPTER_HOVER_PX = theme.chapter_hover_px or 8
 local CHAPTER_TOOLTIP_FONT_SIZE = theme.chapter_tooltip_size or 18
 local CHAPTER_TOOLTIP_OFFSET_Y = theme.chapter_tooltip_offset_y or 36
 local CHAPTER_TOOLTIP_BG_COLOR = common.bgr(theme.chapter_tooltip_bg_color or theme.background_color or "0A0C10")
-local CHAPTER_TOOLTIP_BG_ALPHA = theme.chapter_tooltip_bg_alpha or "30"
+local CHAPTER_TOOLTIP_BG_ALPHA = theme.chapter_tooltip_bg_alpha or "00"
 local CHAPTER_TOOLTIP_RADIUS = theme.chapter_tooltip_radius or 8
 local CHAPTER_TOOLTIP_PAD_X = theme.chapter_tooltip_pad_x or 8
 local CHAPTER_TOOLTIP_PAD_Y = theme.chapter_tooltip_pad_y or 10
@@ -231,7 +231,7 @@ local function get_layout()
   local natural_x1 = BAR_SIDE_INSET
   local natural_x2 = screen_w - BAR_SIDE_INSET
   local natural_w = natural_x2 - natural_x1
-  local BAR_MAX_WIDTH = theme.max_bar_width or screen_w
+  local BAR_MAX_WIDTH = theme.max_bar_width_osc or screen_w
 
   local pill_x1, pill_x2
   if natural_w > BAR_MAX_WIDTH then
@@ -700,8 +700,6 @@ end
 
 local function on_mbtn_left(event)
     if event.event == "down" or event.event == "press" then
-      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
-
       local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)
       local in_titlebar_area = point_in_titlebar_ui(mouse_x, mouse_y)
       local in_osd_area = point_in_own_ui(mouse_x, mouse_y) or in_playlist_area or in_titlebar_area
@@ -714,6 +712,7 @@ local function on_mbtn_left(event)
       end
 
       if in_playlist_area then
+          mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
           return
       end
 

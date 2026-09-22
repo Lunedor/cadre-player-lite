@@ -106,11 +106,24 @@ end
 
 local function update_window_dragging()
   if not bar_visible then return end
+  if mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+    and mouse_y >= BAR_HEIGHT then
+    return
+  end
   local L = get_layout()
   local group_x1 = math.min(L.close_x1, L.minimize_x1, L.maximize_x1)
   local group_x2 = math.max(L.close_x1, L.minimize_x1, L.maximize_x1) + BUTTON_WIDTH
   local over_button = (mouse_x >= group_x1 and mouse_x < group_x2 and mouse_y < BAR_HEIGHT)
-  mp.set_property_bool("window-dragging", not over_button)
+  local playlist_visible = mp.get_property_native("user-data/cadre_playlist/visible", false)
+  local over_playlist = false
+  if playlist_visible then
+    local x1 = mp.get_property_native("user-data/cadre_playlist/x1", -1)
+    local y1 = mp.get_property_native("user-data/cadre_playlist/y1", -1)
+    local x2 = mp.get_property_native("user-data/cadre_playlist/x2", -1)
+    local y2 = mp.get_property_native("user-data/cadre_playlist/y2", -1)
+    over_playlist = mouse_x >= x1 and mouse_x <= x2 and mouse_y >= y1 and mouse_y <= y2
+  end
+  mp.set_property_bool("window-dragging", not over_button and not over_playlist)
 end
 --------------------------------------------------------------------------------
 -- RENDER
@@ -231,11 +244,28 @@ end
 
 local pending_hitbox = nil
 local click_in_progress = false
+local pending_playlist_click = false
+
+local function point_in_published_bounds(prefix, px, py)
+  if not mp.get_property_native("user-data/" .. prefix .. "/visible", false) then
+    return false
+  end
+  local x1 = mp.get_property_native("user-data/" .. prefix .. "/x1", -1)
+  local y1 = mp.get_property_native("user-data/" .. prefix .. "/y1", -1)
+  local x2 = mp.get_property_native("user-data/" .. prefix .. "/x2", -1)
+  local y2 = mp.get_property_native("user-data/" .. prefix .. "/y2", -1)
+  return px >= x1 and px <= x2 and py >= y1 and py <= y2
+end
 
 mp.register_script_message("titlebar-mbtn-left-down", function()
   if click_in_progress then return end
   click_in_progress = true
   pending_hitbox = nil
+  pending_playlist_click = point_in_published_bounds("cadre_playlist", mouse_x, mouse_y)
+  if pending_playlist_click then
+    mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
+    return
+  end
   for _, b in ipairs(hitboxes) do
     if point_in(mouse_x, mouse_y, b) then
       pending_hitbox = b
@@ -245,11 +275,14 @@ mp.register_script_message("titlebar-mbtn-left-down", function()
 end)
 
 mp.register_script_message("titlebar-mbtn-left-up", function()
-  if pending_hitbox then
+  if pending_playlist_click then
+    mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up")
+  elseif pending_hitbox then
     pending_hitbox.cb()
     render()
   end
   pending_hitbox = nil
+  pending_playlist_click = false
   mp.add_timeout(0.25, function() click_in_progress = false end)
 end)
 
@@ -283,8 +316,14 @@ end)
 mp.observe_property("media-title", "string", function() if bar_visible then render() end end)
 
 local function on_mbtn_left(event)
-  if not bar_visible then return end
+  vis.poll()
   if event.event == "down" or event.event == "press" then
+    if point_in_published_bounds("cadre_playlist", mouse_x, mouse_y) then
+      pending_playlist_click = true
+      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
+      return
+    end
+    if not bar_visible then return end
     for _, b in ipairs(hitboxes) do
       if point_in(mouse_x, mouse_y, b) then
         b.cb()
@@ -292,12 +331,33 @@ local function on_mbtn_left(event)
         return
       end
     end
+  elseif event.event == "up" or event.event == "release" then
+    if pending_playlist_click then
+      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up")
+      pending_playlist_click = false
+    end
   end
 end
 
-local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-if not osc_claimed then
-  mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
+local function update_mbtn_binding()
+  if mp.get_property_native("user-data/cadre_osc/mbtn_bound", false) then
+    mp.remove_key_binding("cadre_titlebar_mbtn_left")
+  else
+    mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
+  end
 end
+mp.set_property_native("user-data/cadre_titlebar/loaded", true)
+mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
+
+mp.register_event("shutdown", function()
+  mp.set_property_native("user-data/cadre_titlebar/loaded", false)
+end)
+
+mp.observe_property("window-minimized", "bool", function(_, minimized)
+  if minimized then
+    bar_visible = false
+    render()
+  end
+end)
 
 render()

@@ -587,14 +587,14 @@ function render()
     end
 
     local idx_str = string.format("%02d", real_idx + 1)
-    draw_text(ass, idx_str, L.x1 + 16, (row_y1 + row_y2) / 2, 10,
+    draw_text(ass, idx_str, L.x1 + 16, (row_y1 + row_y2) / 2, FONT_SIZE - 2,
       TEXT, "30", 4, is_current)
 
     local cached_duration = duration_cache[entry.filename]
     local dur_str = cached_duration and fmt_time(cached_duration) or ""
 
     -- Calculate how many characters we can fit before truncation
-    local max_chars = 48
+    local max_chars = 35
     if is_current then max_chars = max_chars - 3 end
     if dur_str ~= "" then max_chars = max_chars - 6 end
 
@@ -602,7 +602,7 @@ function render()
     title = truncate_utf8(title, max_chars)
 
     local title_color = TEXT
-    draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, FONT_SIZE, title_color, "00", 4, is_current)
+    draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, TITLE_FONT_SIZE, title_color, "00", 4, is_current)
 
     local rx_right = L.x2 - 16 - SCROLLBAR_WIDTH
     if is_current then
@@ -612,7 +612,7 @@ function render()
     end
 
     if dur_str ~= "" then
-      draw_text(ass, dur_str, rx_right, (row_y1 + row_y2) / 2, 11,
+      draw_text(ass, dur_str, rx_right, (row_y1 + row_y2) / 2, FONT_SIZE - 2,
         TEXT, "00", 6, false)
     end
 
@@ -763,7 +763,8 @@ end
 
 local function update_window_dragging()
     local osc_present = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-    if osc_present then return end
+  local titlebar_present = mp.get_property_native("user-data/cadre_titlebar/loaded", false)
+  if osc_present or titlebar_present then return end
 
     local should_drag = true
     if panel_visible then
@@ -904,8 +905,10 @@ local function relay_up() on_mbtn_left({ event = "up" }) end
 mp.register_script_message("playlist-mbtn-left-down", relay_down)
 mp.register_script_message("playlist-mbtn-left-up", relay_up)
 
-local function update_mbtn_binding(name, osc_claimed)
-    if osc_claimed then
+local function update_mbtn_binding()
+  local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+  local titlebar_present = mp.get_property_native("user-data/cadre_titlebar/loaded", false)
+  if osc_claimed or titlebar_present then
         -- OSC is active, release the bindings so the OSD/Titlebar can be clicked
         mp.remove_key_binding("cadre_playlist_mbtn_left")
         mp.remove_key_binding("cadre_playlist_mbtn_left_dbl")
@@ -925,6 +928,7 @@ end
 
 -- Dynamically watching the property.
 mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
+mp.observe_property("user-data/cadre_titlebar/loaded", "bool", update_mbtn_binding)
 
 -- DEL bindings
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
