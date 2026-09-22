@@ -12,6 +12,18 @@ local M = {}
 
 local property_cache = {}
 
+function M.register_script(name)
+  local property = "user-data/cadre_scripts/" .. name .. "/loaded"
+  mp.set_property_bool(property, true)
+  mp.register_event("shutdown", function()
+    mp.set_property_bool(property, false)
+  end)
+end
+
+function M.is_script_loaded(name)
+  return mp.get_property_bool("user-data/cadre_scripts/" .. name .. "/loaded", false)
+end
+
 function M.set_property_cached(name, value)
   if property_cache[name] == value then return end
   

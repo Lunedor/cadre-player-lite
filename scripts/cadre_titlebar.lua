@@ -14,15 +14,17 @@ local msg = require 'mp.msg'
 
 local common_path = mp.find_config_file("scripts/cadre_common.lua")
 local common = dofile(common_path)
+common.register_script("cadre_titlebar")
 
 --------------------------------------------------------------------------------
 -- CONFIG
 --------------------------------------------------------------------------------
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
+local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_tb or theme.font_icon or "Segoe MDL2 Assets"
 local TEXT = common.bgr(theme.color_text_tb or theme.text_color or "E2E8F0")
-local TITLE_FONT_SIZE = theme.title_font_size_tb or theme.title_font_size or theme.font_size or 16
+local TITLE_FONT_SIZE = theme.title_font_size_tb or theme.title_font_size or theme.font_size or 18
 local BARBG = common.bgr(theme.color_bar_bg_tb or theme.surface_color or "07080B")
 local DANGER = common.bgr(theme.color_danger_tb or theme.danger_color or "EF4444")
 local HOVERBG = common.bgr(theme.color_hover_bg_tb or "181C26")
@@ -58,6 +60,8 @@ local last_maximize_toggle_time = 0
 local saved_geometry = ""
 local fake_maximized = false
 local is_maximized = false
+local pressed_button = nil
+local pressed_button_token = 0
 
 local function draw_icon(ass, glyph, cx, cy, size, color, alpha)
   common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha)
@@ -106,7 +110,7 @@ end
 
 local function update_window_dragging()
   if not bar_visible then return end
-  if mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
+  if common.is_script_loaded("cadre_osc")
     and mouse_y >= BAR_HEIGHT then
     return
   end
@@ -160,16 +164,18 @@ local function render()
   local hover_max = mouse_x >= L.maximize_x1 and mouse_x < L.maximize_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
   local hover_close = mouse_x >= L.close_x1 and mouse_x < L.close_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
 
-  if hover_min then
-    common.draw_rrect(ass, L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, HOVERBG, "20")
+  if hover_min or pressed_button == "minimize" then
+    common.draw_rrect(ass, L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, HOVERBG,
+      pressed_button == "minimize" and "38" or "20")
   end
   draw_icon(ass, ICON.minimize, L.minimize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "minimize", L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
     mp.commandv("cycle", "window-minimized")
   end)
 
-  if hover_max then
-    common.draw_rrect(ass, L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 0, HOVERBG, "20")
+  if hover_max or pressed_button == "maximize" then
+    common.draw_rrect(ass, L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 0, HOVERBG,
+      pressed_button == "maximize" and "38" or "20")
   end
   draw_icon(ass, is_maximized and ICON.restore or ICON.maximize, L.maximize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "maximize", L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
@@ -207,6 +213,28 @@ local function render()
   osd.res_x = screen_w
   osd.res_y = screen_h
   osd:update()
+end
+
+local function set_pressed_button(name)
+  if name ~= "minimize" and name ~= "maximize" then return end
+  pressed_button = name
+  pressed_button_token = pressed_button_token + 1
+  local token = pressed_button_token
+  render()
+  mp.add_timeout(0.12, function()
+    if pressed_button_token == token then
+      pressed_button = nil
+      render()
+    end
+  end)
+end
+
+local function clear_pressed_button()
+  pressed_button_token = pressed_button_token + 1
+  if pressed_button then
+    pressed_button = nil
+    render()
+  end
 end
 
 --------------------------------------------------------------------------------
@@ -269,6 +297,7 @@ mp.register_script_message("titlebar-mbtn-left-down", function()
   for _, b in ipairs(hitboxes) do
     if point_in(mouse_x, mouse_y, b) then
       pending_hitbox = b
+      set_pressed_button(b.name)
       break
     end
   end
@@ -283,6 +312,7 @@ mp.register_script_message("titlebar-mbtn-left-up", function()
   end
   pending_hitbox = nil
   pending_playlist_click = false
+  clear_pressed_button()
   mp.add_timeout(0.25, function() click_in_progress = false end)
 end)
 
@@ -340,14 +370,13 @@ local function on_mbtn_left(event)
 end
 
 local function update_mbtn_binding()
-  if mp.get_property_native("user-data/cadre_osc/mbtn_bound", false) then
+  if common.is_script_loaded("cadre_osc") then
     mp.remove_key_binding("cadre_titlebar_mbtn_left")
   else
     mp.add_forced_key_binding("MBTN_LEFT", "cadre_titlebar_mbtn_left", on_mbtn_left, { complex = true })
   end
 end
-mp.set_property_native("user-data/cadre_titlebar/loaded", true)
-mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
+mp.observe_property("user-data/cadre_scripts/cadre_osc/loaded", "bool", update_mbtn_binding)
 
 mp.register_event("shutdown", function()
   mp.set_property_native("user-data/cadre_titlebar/loaded", false)

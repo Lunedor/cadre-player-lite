@@ -9,6 +9,7 @@ local msg = require 'mp.msg'
 
 local common_path = mp.find_config_file("scripts/cadre_common.lua")
 local common = dofile(common_path)
+common.register_script("cadre_osc")
 
 local thumbfast = { width = 0, height = 0, disabled = true, available = false }
 mp.register_script_message("thumbfast-info", function(json)
@@ -26,10 +27,11 @@ end)
 
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
+local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined"
 local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.text_color or "F8FAFC")
 local TEXT = common.bgr(theme.color_text_osc or theme.text_color or "F8FAFC")
-local FONT_SIZE = theme.font_size_osc or theme.font_size or 14
+local FONT_SIZE = theme.font_size_osc or theme.font_size or 16
 local BARBG = common.bgr(theme.color_bar_bg_osc or theme.surface_color or "0D1117")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "1C"
 local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.accent_color or "63B8FF")
@@ -171,6 +173,18 @@ end
 local function add_hitbox(name, x1, y1, x2, y2, cb) common.add_hitbox(hitboxes, name, x1, y1, x2, y2, cb) end
 local function point_in(px, py, b) return common.point_in(px, py, b) end
 local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha) end
+
+local function playlist_script_loaded()
+  return common.is_script_loaded("cadre_playlist")
+end
+
+local function run_playlist_action(action, fallback)
+  if playlist_script_loaded() then
+    mp.commandv("script-message", action)
+  else
+    mp.command(fallback)
+  end
+end
 
 local function normalize_chapters(raw)
     local out = {}
@@ -404,57 +418,98 @@ local function render()
 
   common.draw_rrect(ass, filled_x - THUMB_W, L.seek_y - THUMB_H, filled_x + THUMB_W, L.seek_y + THUMB_H, THUMB_RADIUS, THUMB_COLOR, "00")
 
-  if hovering_seek and hovered_chapter and hovered_chapter.title then
-    local title_len = utf8_char_count(hovered_chapter.title)
+  -- one-time setup somewhere in your script init
+-- Create this once, outside the drawing function/block.
+  local measure_osd = mp.create_osd_overlay("ass-events")
+  measure_osd.hidden = true
+  measure_osd.compute_bounds = true
 
-    local char_w = CHAPTER_TOOLTIP_FONT_SIZE * 0.50
-    local text_w = title_len * char_w
 
-    local pad_x = CHAPTER_TOOLTIP_PAD_X or 6
-    local pad_y = CHAPTER_TOOLTIP_PAD_Y or 3
+  local function measure_text_width(text, font_size, font)
+      local f = font or UI_FONT
+      local osd_w, osd_h = mp.get_osd_size()
 
-    local pill_w = text_w + pad_x * 2
-    local pill_h = CHAPTER_TOOLTIP_FONT_SIZE + pad_y * 2
+      measure_osd.res_x = osd_w
+      measure_osd.res_y = osd_h
 
-    local max_pill_w = (bar_x2 - bar_x1) - 12
-    pill_w = math.min(pill_w, max_pill_w)
+      -- Use the same relevant ASS properties as common.draw_text().
+      measure_osd.data = string.format(
+          "{\\pos(1000,1000)\\an5\\fn%s\\fs%d"
+          .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
+          f,
+          font_size,
+          text
+      )
 
-    local half_w = pill_w / 2
-    local target_x = math.min(
-        bar_x2 - half_w - 6,
-        math.max(bar_x1 + half_w + 6, mouse_x)
-    )
+      local res = measure_osd:update()
 
-    local center_y = L.seek_y - CHAPTER_TOOLTIP_OFFSET_Y
-    local box_x1 = target_x - half_w
-    local box_x2 = target_x + half_w
-    local box_y1 = center_y - pill_h / 2
-    local box_y2 = center_y + pill_h / 2
+      if res and res.x0 and res.x1 then
+          return res.x1 - res.x0
+      end
 
-    common.draw_rrect(
-        ass,
-        box_x1,
-        box_y1,
-        box_x2,
-        box_y2,
-        CHAPTER_TOOLTIP_RADIUS,
-        CHAPTER_TOOLTIP_BG_COLOR,
-        CHAPTER_TOOLTIP_BG_ALPHA
-    )
-
-    common.draw_text(
-        ass,
-        hovered_chapter.title,
-        target_x,
-        center_y,
-        CHAPTER_TOOLTIP_FONT_SIZE,
-        TEXT,
-        "00",
-        5,
-        false
-    )
+      -- Fallback only if libass does not return bounds.
+      return utf8_char_count(text) * font_size * 0.5
   end
 
+
+  -- Put this inside the same drawing function where `ass`,
+  -- `bar_x1`, `bar_x2`, `mouse_x`, and `L.seek_y` exist.
+  if hovering_seek and hovered_chapter and hovered_chapter.title then
+      local text_w = measure_text_width(
+          hovered_chapter.title,
+          CHAPTER_TOOLTIP_FONT_SIZE,
+          UI_FONT
+      )
+
+      -- Optional small correction for libass ink bounds.
+      text_w = text_w + 2
+
+      local pad_x = CHAPTER_TOOLTIP_PAD_X or 0
+      local pad_y = CHAPTER_TOOLTIP_PAD_Y or 3
+
+      local pill_w = text_w + pad_x * 2
+      local pill_h = CHAPTER_TOOLTIP_FONT_SIZE + pad_y * 2
+
+      local max_pill_w = (bar_x2 - bar_x1) - 12
+      pill_w = math.min(pill_w, max_pill_w)
+
+      local half_w = pill_w / 2
+
+      local target_x = math.min(
+          bar_x2 - half_w - 6,
+          math.max(bar_x1 + half_w + 6, mouse_x)
+      )
+
+      local center_y = L.seek_y - CHAPTER_TOOLTIP_OFFSET_Y
+
+      local box_x1 = target_x - half_w
+      local box_x2 = target_x + half_w
+      local box_y1 = center_y - pill_h / 2
+      local box_y2 = center_y + pill_h / 2
+
+      common.draw_rrect(
+          ass,
+          box_x1,
+          box_y1,
+          box_x2,
+          box_y2,
+          CHAPTER_TOOLTIP_RADIUS,
+          CHAPTER_TOOLTIP_BG_COLOR,
+          CHAPTER_TOOLTIP_BG_ALPHA
+      )
+
+      common.draw_text(
+          ass,
+          hovered_chapter.title,
+          target_x,
+          center_y,
+          CHAPTER_TOOLTIP_FONT_SIZE,
+          TEXT,
+          "00",
+          5,
+          false
+      )
+  end
   add_hitbox("seekbar", bar_x1, L.seek_y - 10, bar_x2, L.seek_y + 10, function(px)
     seek_dragging = true
     if duration and duration > 0 then
@@ -467,7 +522,7 @@ local function render()
 
   draw_icon(ass, ICON.prev, L.prev_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
   add_hitbox("prev", L.prev_x - 16, L.row_y - 16, L.prev_x + 16, L.row_y + 16, function()
-    mp.commandv("script-message", "playlist-prev")
+    run_playlist_action("playlist-prev", "playlist-prev")
   end)
 
   draw_icon(ass, paused and ICON.play or ICON.pause, L.play_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
@@ -477,7 +532,7 @@ local function render()
 
   draw_icon(ass, ICON.next, L.next_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
   add_hitbox("next", L.next_x - 16, L.row_y - 16, L.next_x + 16, L.row_y + 16, function()
-    mp.commandv("script-message", "playlist-next")
+    run_playlist_action("playlist-next", "playlist-next")
   end)
 
   draw_icon(ass, ICON.stop, L.stop_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
@@ -509,7 +564,7 @@ local function render()
   local pl_visible = mp.get_property_native("user-data/cadre_playlist/visible", false)
   draw_icon(ass, ICON.playlist, L.playlist_x, L.row_y, ICON_SIZE, ICON_COLOR, pl_visible and "00" or "60")
   add_hitbox("playlist", L.playlist_x - 16, L.row_y - 16, L.playlist_x + 16, L.row_y + 16, function()
-    mp.commandv("script-message", "toggle-playlist")
+    run_playlist_action("toggle-playlist", "show-text ${playlist}")
   end)
 
   if volume_popup_open then
@@ -684,6 +739,7 @@ local function on_mouse_move()
         if bar_visible then render() end
     end
 end
+
 update_hovered_chapter()
   local hovering_hitbox = false
   for _, b in ipairs(hitboxes) do
@@ -712,7 +768,7 @@ local function on_mbtn_left(event)
       end
 
       if in_playlist_area then
-          mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down")
+          mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-down", event.key_name or "")
           return
       end
 
@@ -775,7 +831,7 @@ local function on_mbtn_left(event)
       end
 
   elseif event.event == "up" or event.event == "release" then
-      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up")
+      mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up", event.key_name or "")
       mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-up")
       volume_dragging = false
       seek_dragging = false
@@ -791,6 +847,9 @@ mp.observe_property("mouse-pos", "native", function(_, pos)
 end)
 mp.set_property_native("user-data/cadre_osc/mbtn_bound", true)
 mp.add_forced_key_binding("MBTN_LEFT", "cadre_mbtn_left", on_mbtn_left, { complex = true })
+mp.add_forced_key_binding("Ctrl+MBTN_LEFT", "cadre_ctrl_mbtn_left", on_mbtn_left, { complex = true })
+mp.add_forced_key_binding("Shift+MBTN_LEFT", "cadre_shift_mbtn_left", on_mbtn_left, { complex = true })
+mp.add_forced_key_binding("Ctrl+Shift+MBTN_LEFT", "cadre_ctrl_shift_mbtn_left", on_mbtn_left, { complex = true })
 mp.register_event("client-message", function() end)
 mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
   local in_playlist_area = point_in_playlist_ui(mouse_x, mouse_y)

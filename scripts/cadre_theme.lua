@@ -3,8 +3,9 @@
  cadre_theme.lua
  Default Theme Configuration
 
- Vanta-Crimson Monolith
- Author: cadre-player
+ Default theme for the Cadre UI. This file contains every possible customization variable, allowing users to tweak the appearance of the interface to their liking. 
+ By default, all settings are commented out, meaning the player will use its hardcoded default fallbacks. To customize, simply uncomment a line and change its value.
+ Author: Lunedor
 
  HOW TO USE:
  This file contains every possible customization variable.
@@ -24,7 +25,7 @@
 local M = {}
 
 M.theme_name = "Default Theme"
-M.theme_author = "cadre-player"
+M.theme_author = "Lunedor"
 
 ----------------------------------------------------------
 -- 1. CORE PALETTE (Global Base)
@@ -45,7 +46,7 @@ M.theme_author = "cadre-player"
 ----------------------------------------------------------
 -- M.font_text       = "Inter"
 -- M.font_size       = 16
--- M.title_font_size = 14
+-- M.title_font_size = 18
 -- M.font_icon       = "Material Icons Outlined" -- Default font family used for drawing icons
 
 -- M.alpha_bar_bg    = "18" -- Global background transparency for UI panels

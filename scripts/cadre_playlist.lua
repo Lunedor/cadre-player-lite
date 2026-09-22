@@ -9,6 +9,7 @@ local msg = require 'mp.msg'
 
 local common_path = mp.find_config_file("scripts/cadre_common.lua")
 local common = dofile(common_path)
+common.register_script("cadre_playlist")
 
 --------------------------------------------------------------------------------
 -- CONFIG
@@ -16,11 +17,12 @@ local common = dofile(common_path)
 
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
+local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_pl or theme.font_icon or "Material Icons Outlined"
 local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.text_color or "CBD5E1")
 local TEXT = common.bgr(theme.color_text_pl or theme.text_color or "F8FAFC")
-local FONT_SIZE = theme.font_size or theme.font_size_pl or 14
-local TITLE_FONT_SIZE = theme.title_font_size_pl or theme.title_font_size or theme.font_size or 16
+local FONT_SIZE = theme.font_size or theme.font_size_pl or 16
+local TITLE_FONT_SIZE = theme.title_font_size_pl or theme.title_font_size or theme.font_size or 18
 local DIM = common.bgr(theme.color_dim_pl or theme.dim_color or "64748B")
 local BARBG = common.bgr(theme.color_bar_bg_pl or theme.surface_color or "0B0E14")
 local ALPHA_BAR_BG = theme.alpha_bar_bg_pl or theme.alpha_bar_bg or "18"
@@ -83,6 +85,8 @@ local items = {}
 local filtered_items = {}
 local current_index = -1
 local selected_index = -1
+local selected_indices = {}
+local selection_anchor = -1
 local scroll_offset = 0
 
 local search_active = false
@@ -92,7 +96,7 @@ local shuffle_on = false
 local shuffle_order = {}
 local repeat_mode = "off"
 
-local drag = { active = false, from_index = -1, current_target = -1 }
+local drag = { active = false, from_index = -1, current_target = -1, indices = {} }
 local scrollbar_drag = false
 
 local hitboxes = {}
@@ -208,6 +212,57 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_ico
 local function draw_text(ass, str, x, y, size, color, alpha, align, bold) common.draw_text(ass, str, x, y, size, color, alpha, align, bold) end
 local function draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) common.draw_rrect(ass, x1, y1, x2, y2, r, color, alpha) end
 
+local function has_modifier(name, event)
+  local key_name = event and (event.key_name or event.key) or ""
+  return key_name:lower():find(name .. "+", 1, true) ~= nil
+end
+
+local function clear_selection()
+  selected_indices = {}
+  selected_index = -1
+end
+
+local function set_single_selection(index)
+  selected_indices = { [index] = true }
+  selected_index = index
+  selection_anchor = index
+end
+
+local function selected_count()
+  local count = 0
+  for _ in pairs(selected_indices) do count = count + 1 end
+  return count
+end
+
+local function select_row(index, event)
+  local ctrl = has_modifier("ctrl", event)
+  local shift = has_modifier("shift", event)
+
+  if shift and selection_anchor >= 0 then
+    local first, last = math.min(selection_anchor, index), math.max(selection_anchor, index)
+    if not ctrl then selected_indices = {} end
+    for i = first, last do selected_indices[i] = true end
+    selected_index = index
+  elseif ctrl then
+    if selected_indices[index] then
+      selected_indices[index] = nil
+    else
+      selected_indices[index] = true
+    end
+    selected_index = index
+    selection_anchor = index
+  else
+    set_single_selection(index)
+  end
+end
+
+local function sorted_selected_indices()
+  local indices = {}
+  for index in pairs(selected_indices) do indices[#indices + 1] = index end
+  table.sort(indices)
+  return indices
+end
+
 local function render_add_menu(ass, geo)
   draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, ALPHA_BAR_BG)
   local entries = {
@@ -273,6 +328,13 @@ end
 local function refresh_playlist()
   items = mp.get_property_native("playlist") or {}
   current_index = mp.get_property_number("playlist-pos", -1)
+  local valid_selection = {}
+  for index in pairs(selected_indices) do
+    if index >= 0 and index < #items then valid_selection[index] = true end
+  end
+  selected_indices = valid_selection
+  if selected_index >= #items then selected_index = -1 end
+  if selection_anchor >= #items then selection_anchor = -1 end
   rebuild_filtered()
   reconcile_shuffle_order()
 end
@@ -375,10 +437,12 @@ end)
 --------------------------------------------------------------------------------
 
 local function remove_selected()
-  if selected_index >= 0 and selected_index < #items then
-    mp.commandv("playlist-remove", selected_index)
-    selected_index = -1
+  local indices = sorted_selected_indices()
+  for i = #indices, 1, -1 do
+    mp.commandv("playlist-remove", indices[i])
   end
+  clear_selection()
+  refresh_playlist()
 end
 
 local function send_to_recycle_bin(path)
@@ -394,19 +458,76 @@ local function send_to_recycle_bin(path)
 end
 
 local function delete_selected_to_recycle_bin()
-  if selected_index < 0 or selected_index >= #items then return end
-  local entry = items[selected_index + 1]
-  local path = entry.filename
-  if not path or path:match("^https?://") then
-    mp.osd_message("Cannot delete a URL/stream entry", 2)
-    return
+  local indices = sorted_selected_indices()
+  if #indices == 0 then return end
+
+  local paths = {}
+  for _, index in ipairs(indices) do
+    local path = items[index + 1].filename
+    if not path or path:match("^https?://") then
+      mp.osd_message("Cannot delete a URL/stream entry", 2)
+      return
+    end
+    paths[#paths + 1] = path
   end
-  mp.commandv("playlist-remove", selected_index)
-  local ok = send_to_recycle_bin(path)
-  if ok then
-    mp.osd_message("Moved to Recycle Bin: " .. basename(path), 2)
+
+  for i = #indices, 1, -1 do
+    mp.commandv("playlist-remove", indices[i])
   end
-  selected_index = -1
+  local moved = 0
+  for _, path in ipairs(paths) do
+    if send_to_recycle_bin(path) then moved = moved + 1 end
+  end
+  if moved > 0 then
+    mp.osd_message("Moved " .. moved .. " file" .. (moved == 1 and "" or "s") .. " to Recycle Bin", 2)
+  end
+  clear_selection()
+  refresh_playlist()
+end
+
+local function reorder_selected(target_index)
+  local selected = sorted_selected_indices()
+  if #selected == 0 or target_index < 0 or target_index >= #items then return end
+
+  local selected_lookup = {}
+  for _, index in ipairs(selected) do selected_lookup[index] = true end
+  if selected_lookup[target_index] then return end
+
+  local desired = {}
+  local insert_at = 1
+  for index = 0, #items - 1 do
+    if not selected_lookup[index] then
+      if index == target_index then insert_at = #desired + 1 end
+      desired[#desired + 1] = index
+    end
+  end
+  for i = #selected, 1, -1 do
+    table.insert(desired, insert_at, selected[i])
+  end
+
+  local current = {}
+  for index = 0, #items - 1 do current[#current + 1] = index end
+  for destination = 1, #desired do
+    if current[destination] ~= desired[destination] then
+      local source = destination
+      while current[source] ~= desired[destination] do source = source + 1 end
+      mp.commandv("playlist-move", source - 1, destination - 1)
+      local moved = table.remove(current, source)
+      table.insert(current, destination, moved)
+    end
+  end
+
+  selected_indices = {}
+  for position, index in ipairs(desired) do
+    if selected_lookup[index] then selected_indices[position - 1] = true end
+  end
+  selected_index = nil
+  for index in pairs(selected_indices) do
+    selected_index = index
+    break
+  end
+  selected_index = selected_index or -1
+  selection_anchor = selected_index
 end
 
 --------------------------------------------------------------------------------
@@ -566,7 +687,7 @@ function render()
     local row_y2 = row_y1 + ROW_HEIGHT - 2
 
     local is_current = (real_idx == current_index)
-    local is_selected = (real_idx == selected_index)
+    local is_selected = selected_indices[real_idx] == true
     local is_drop_target = drag.active and drag.current_target == real_idx
 
     if is_selected then
@@ -753,6 +874,13 @@ local function on_mouse_move_internal()
   end
 
   if drag.active then
+    local edge = ROW_HEIGHT
+    local max_scroll = math.max(0, #filtered_items - L.visible_rows)
+    if mouse_y < L.list_y1 + edge then
+      scroll_offset = math.max(0, scroll_offset - 1)
+    elseif mouse_y > L.list_y2 - edge then
+      scroll_offset = math.min(max_scroll, scroll_offset + 1)
+    end
     drag.current_target = row_at_xy(L, mouse_x, mouse_y) or drag.current_target
     render()
     return
@@ -762,8 +890,8 @@ local function on_mouse_move_internal()
 end
 
 local function update_window_dragging()
-    local osc_present = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-  local titlebar_present = mp.get_property_native("user-data/cadre_titlebar/loaded", false)
+    local osc_present = common.is_script_loaded("cadre_osc")
+  local titlebar_present = common.is_script_loaded("cadre_titlebar")
   if osc_present or titlebar_present then return end
 
     local should_drag = true
@@ -853,16 +981,24 @@ local function on_mbtn_left(event)
     local row_idx = row_at_xy(L, mouse_x, mouse_y)
     if row_idx ~= nil then
       local now = mp.get_time()
-      if last_click_index == row_idx and (now - last_click_time) < DOUBLE_CLICK_SEC then
+      local modified = has_modifier("ctrl", event) or has_modifier("shift", event)
+      if not modified and last_click_index == row_idx and (now - last_click_time) < DOUBLE_CLICK_SEC then
         mp.commandv("playlist-play-index", row_idx)
         last_click_index = -1
       else
-        selected_index = row_idx
-        drag.active = true
+        if modified or not selected_indices[row_idx] then
+          select_row(row_idx, event)
+        end
+        drag.active = selected_indices[row_idx] == true
         drag.from_index = row_idx
         drag.current_target = row_idx
-        last_click_index = row_idx
-        last_click_time = now
+        drag.indices = sorted_selected_indices()
+        if modified then
+          last_click_index = -1
+        else
+          last_click_index = row_idx
+          last_click_time = now
+        end
       end
       render()
       return
@@ -887,34 +1023,38 @@ local function on_mbtn_left(event)
   elseif event.event == "up" or event.event == "release" then
     scrollbar_drag = false
     if drag.active then
-      if drag.current_target ~= drag.from_index and drag.current_target >= 0 then
-        mp.commandv("playlist-move", drag.from_index, drag.current_target)
-        selected_index = drag.current_target
-      end
+      if drag.current_target >= 0 then reorder_selected(drag.current_target) end
       drag.active = false
       drag.from_index = -1
       drag.current_target = -1
+      drag.indices = {}
       render()
     end
   end
 end
 
-local function relay_down() on_mbtn_left({ event = "down" }) end
-local function relay_up() on_mbtn_left({ event = "up" }) end
+local function relay_down(key_name) on_mbtn_left({ event = "down", key_name = key_name or "" }) end
+local function relay_up(key_name) on_mbtn_left({ event = "up", key_name = key_name or "" }) end
 
 mp.register_script_message("playlist-mbtn-left-down", relay_down)
 mp.register_script_message("playlist-mbtn-left-up", relay_up)
 
 local function update_mbtn_binding()
-  local osc_claimed = mp.get_property_native("user-data/cadre_osc/mbtn_bound", false)
-  local titlebar_present = mp.get_property_native("user-data/cadre_titlebar/loaded", false)
+  local osc_claimed = common.is_script_loaded("cadre_osc")
+  local titlebar_present = common.is_script_loaded("cadre_titlebar")
   if osc_claimed or titlebar_present then
         -- OSC is active, release the bindings so the OSD/Titlebar can be clicked
         mp.remove_key_binding("cadre_playlist_mbtn_left")
+        mp.remove_key_binding("cadre_playlist_ctrl_mbtn_left")
+        mp.remove_key_binding("cadre_playlist_shift_mbtn_left")
+        mp.remove_key_binding("cadre_playlist_ctrl_shift_mbtn_left")
         mp.remove_key_binding("cadre_playlist_mbtn_left_dbl")
     else
         -- OSC is inactive, playlist takes control of the clicks
         mp.add_forced_key_binding("MBTN_LEFT", "cadre_playlist_mbtn_left", on_mbtn_left, { complex = true })
+      mp.add_forced_key_binding("Ctrl+MBTN_LEFT", "cadre_playlist_ctrl_mbtn_left", on_mbtn_left, { complex = true })
+      mp.add_forced_key_binding("Shift+MBTN_LEFT", "cadre_playlist_shift_mbtn_left", on_mbtn_left, { complex = true })
+      mp.add_forced_key_binding("Ctrl+Shift+MBTN_LEFT", "cadre_playlist_ctrl_shift_mbtn_left", on_mbtn_left, { complex = true })
         
         mp.add_key_binding("MBTN_LEFT_DBL", "cadre_playlist_mbtn_left_dbl", function()
             local L = get_layout()
@@ -927,8 +1067,8 @@ local function update_mbtn_binding()
 end
 
 -- Dynamically watching the property.
-mp.observe_property("user-data/cadre_osc/mbtn_bound", "bool", update_mbtn_binding)
-mp.observe_property("user-data/cadre_titlebar/loaded", "bool", update_mbtn_binding)
+mp.observe_property("user-data/cadre_scripts/cadre_osc/loaded", "bool", update_mbtn_binding)
+mp.observe_property("user-data/cadre_scripts/cadre_titlebar/loaded", "bool", update_mbtn_binding)
 
 -- DEL bindings
 mp.add_key_binding("DEL", "cadre_playlist_delete", remove_selected)
