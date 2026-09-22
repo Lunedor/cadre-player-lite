@@ -1,72 +1,225 @@
-![Cadre Player Lite Screen](cadre-player-lite.png)
-
 # Cadre UI for mpv
 
-A modular graphical interface suite for the mpv media player. Cadre replaces the default UI with a desktop-first, neumorphic design featuring an advanced playlist manager, an interactive on-screen controller (OSC), and a custom frameless titlebar.
+![Cadre Player Lite Screen](screenshots/Default.png)
+
+![Cadre Player MacOsish Theme](screenshots/MacOsish.png)
+
+![Cadre Player Glassy & Pill Theme](screenshots/PillGlassy.png)
+
+![Cadre Player Terminal Theme](screenshots/Terminal.png)
+
+![CHapter Tooltips](screenshots/ChapterTooltip.png)
+
+Cadre is a modular UI suite for [mpv](https://mpv.io/). Its components can be used together as one interface or enabled separately according to your workflow.
+
+Every Cadre component requires these two shared files:
+
+- `cadre_common.lua` - shared helpers, native Windows dialogs, playlist actions, drawing utilities, and UI coordination.
+- `cadre_theme.lua` - the shared theme and layout configuration.
+
+The optional UI components are:
+
+- `cadre_osc.lua` - customizable on-screen controls, seeking, volume, chapter markers, chapter tooltips, and optional seek thumbnails.
+- `cadre_playlist.lua` - a visual playlist and queue manager.
+- `cadre_titlebar.lua` - a custom titlebar with minimize, maximize/restore, and close controls.
 
 ## Features
 
-* **Cadre OSC:** A floating control bar featuring a dynamic seekbar, a volume flyout slider, and integrated menus for adding media.
-* **Cadre Playlist:** A searchable, scrollable playlist overlay. Supports drag-and-drop reordering, dynamic text filtering, shuffle/repeat toggling, and native file deletion.
-* **Cadre Titlebar:** A frameless window titlebar replacement with custom minimize, maximize, and close controls.
-* **Native Dialogs:** Uses PowerShell integration to open native Windows file pickers, folder selectors, and text prompts directly within mpv.
-* **Centralized Theming:** Colors, transparencies, dimensions, and typography are globally managed through a single configuration file.
+### Modular components
+
+Use any combination of the components:
+
+| Component | Required shared files | Can be used alone? |
+| --- | --- | --- |
+| OSC | `cadre_common.lua`, `cadre_theme.lua` | Yes |
+| Playlist | `cadre_common.lua`, `cadre_theme.lua` | Yes |
+| Titlebar | `cadre_common.lua`, `cadre_theme.lua` | Yes |
+| Full Cadre UI | All files above | Yes, as a complete suite |
+
+The components detect one another when present and coordinate mouse input, window dragging, and playlist controls. If a related component is not installed, the available component falls back to normal mpv commands where appropriate.
+
+### Cadre OSC
+
+- Customizable control bar layout: use a floating bar, a full-width bar, or configure your own dimensions and insets through `cadre_theme.lua`.
+- Seekbar with hover expansion and draggable seeking.
+- Volume flyout with a vertical volume slider.
+- Add-file, add-folder, and add-URL menus using native Windows dialogs.
+- Previous, play/pause, next, stop, fullscreen, and playlist controls.
+- Chapter markers on the seekbar.
+- Chapter-name tooltips when hovering chapter markers.
+- YouTube chapter loading for YouTube URLs and streams when `yt-dlp` is available.
+- Optional seekbar thumbnail previews through [thumbfast](https://github.com/po5/thumbfast).
+
+### Cadre Playlist
+
+- Searchable and scrollable playlist overlay.
+- Multiple selection with Ctrl-click and range selection with Shift-click.
+- Double-click to play an item.
+- Drag-and-drop reordering, including selected groups.
+- Remove selected entries from the playlist.
+- Move local files to the Windows Recycle Bin with `Shift+DEL`.
+- Shuffle playback order without changing the visible playlist order.
+- Repeat modes: off, repeat playlist, and repeat current item.
+- Save and load M3U/M3U8 playlists.
+- Per-item duration display when mpv has reported the duration.
+
+### Cadre Titlebar
+
+- Frameless custom titlebar for borderless mpv windows.
+- Minimize, maximize/restore, and close controls.
+- Configurable button side: Windows-style right side or macOS-style left side.
+- Configurable startup visibility and title alignment.
+- Coordinates with the playlist and OSC so window dragging does not interfere with controls.
+
+### Centralized theming
+
+`cadre_theme.lua` controls colors, alpha values, fonts, typography, component-specific overrides, dimensions, spacing, radii, and visibility behavior. The OSC layout is intentionally configurable rather than fixed to one visual style.
 
 ## Requirements
 
-* **mpv:** Latest release recommended.
-* **Windows OS:** The scripts rely on `powershell` subprocesses to render native file dialogs and send files to the Recycle Bin.
-* **Fonts:** The UI relies on **Material Icons Outlined** (OSC/Playlist) and **Segoe MDL2 Assets** (Titlebar). Ensure these are installed on your system to render icons correctly.
+- Windows.
+- A current mpv build.
+- PowerShell, used for native file/folder/URL dialogs and Recycle Bin integration.
+- `Material Icons Outlined` for the OSC and playlist icons.
+- `Segoe MDL2 Assets` for the titlebar icons.
+- `yt-dlp` in `PATH` if you want chapters loaded automatically from YouTube URLs.
+- `thumbfast.lua` and its dependencies if you want seekbar thumbnail previews.
+
+The UI can still run if optional icon fonts or optional integrations are unavailable, but some icons or features may not render or activate correctly.
 
 ## Installation
 
-1. Open your mpv configuration directory (typically `%APPDATA%\mpv\` on Windows).
-2. Copy the following files into your `scripts` folder:
-   * `cadre_common.lua`
-   * `cadre_osc.lua`
-   * `cadre_playlist.lua`
-   * `cadre_titlebar.lua`
-   * `cadre_theme.lua`
-3. Open your `mpv.conf` file and add the following lines. This is **required** to disable the default UI, remove OS window borders, and prevent visual glitches during startup:
-```ini
-osc=no
-osd-bar=no
-border=no
-autofit-smaller=800x450
+1. Copy the desired Cadre files into mpv's `scripts` directory. For the complete UI, copy:
 
+   ```text
+   cadre_common.lua
+   cadre_theme.lua
+   cadre_osc.lua
+   cadre_playlist.lua
+   cadre_titlebar.lua
+   ```
+
+2. For a partial setup, copy `cadre_common.lua`, `cadre_theme.lua`, and only the component files you want.
+
+3. Add the following to `mpv.conf` when using the Cadre OSC or titlebar:
+
+   ```ini
+   osc=no
+   osd-bar=no
+   border=no
+   autofit-smaller=800x450
+   ```
+
+   `border=no` is needed for the custom titlebar and for a consistent borderless layout. If you use only the playlist, the other settings are optional.
+
+4. Restart mpv. mpv automatically loads Lua scripts placed in its `scripts` directory.
+
+A typical Windows portable layout looks like this:
+
+```text
+mpv/
+├─ mpv.conf
+└─ scripts/
+   ├─ cadre_common.lua
+   ├─ cadre_theme.lua
+   ├─ cadre_osc.lua
+   ├─ cadre_playlist.lua
+   └─ cadre_titlebar.lua
 ```
 
-## Configuration & Theming
+## Choosing Components
 
-All visual settings are controlled via `cadre_theme.lua`. You can modify this file to adjust hex color codes, alpha transparency levels, widget dimensions, and fonts. Overrides are available for specific components (e.g., setting `color_bar_bg_pl` allows the playlist to use a different background color than the global `color_bar_bg`).
+Because mpv loads scripts from the `scripts` directory, selective use is easiest when only the desired Cadre component files are present there:
 
-### Routing Keyboard Shortcuts to Cadre (Shuffle Support)
+- OSC only: `cadre_common.lua`, `cadre_theme.lua`, `cadre_osc.lua`
+- Playlist only: `cadre_common.lua`, `cadre_theme.lua`, `cadre_playlist.lua`
+- Titlebar only: `cadre_common.lua`, `cadre_theme.lua`, `cadre_titlebar.lua`
+- Complete UI: all five Cadre files
 
-By default, standard mpv keyboard bindings (`Enter`, `>`, etc.) trigger native playlist commands, which bypass Cadre's custom shuffle logic. To ensure keyboard shortcuts respect Cadre's shuffle state, route them to the script by adding these lines to your `input.conf`:
+Other unrelated scripts can remain in the same directory.
 
-```ini
+## Configuration and Themes
+
+Edit `cadre_theme.lua` to customize the active UI. Settings include:
+
+- Global and per-component colors.
+- Transparency values.
+- Fonts and font sizes.
+- OSC bar width, height, margins, radius, seekbar position, and control spacing.
+- Playlist panel width, row height, insets, toolbar, search field, and scrollbar.
+- Titlebar height, button width, button side, and startup visibility.
+- Chapter marker and tooltip appearance.
+
+### Sample themes
+
+The repository may include a `theme` folder containing sample theme files. Those files are examples, not files that Cadre loads automatically.
+
+To try a sample theme:
+
+1. Open the sample theme file from the `theme` folder.
+2. Copy its contents.
+3. Paste the contents into your active `cadre_theme.lua`, replacing the current theme configuration.
+4. Restart mpv.
+
+Keep one active `cadre_theme.lua` in the mpv `scripts` directory. Do not rename the active file unless you also update every Cadre script that loads it.
+
+## Playlist Shuffle Shortcuts
+
+Cadre's playlist shuffle mode controls the custom `playlist-next` and `playlist-prev` script messages. Native mpv playlist shortcuts bypass that custom order, so route your next/previous keys through Cadre in `input.conf`:
+
+```text
 ENTER      script-message playlist-next
 KP_ENTER   script-message playlist-next
 >          script-message playlist-next
 PGDN       script-message playlist-next
 <          script-message playlist-prev
 PGUP       script-message playlist-prev
-
 ```
 
-## Default UI Keybindings
+You can use different keys; the important part is sending `script-message playlist-next` and `script-message playlist-prev` while `cadre_playlist.lua` is loaded.
 
-Cadre utilizes standard mouse interactions (click, drag, scroll) for its UI components. Specialized bindings include:
+The OSC automatically sends these messages to the playlist component when it is installed. Without the playlist component, the OSC falls back to mpv's normal previous/next commands.
 
-* **`DEL`** : Remove the selected item from the Cadre playlist.
-* **`Shift+DEL`** : Delete the selected file from your hard drive (moves to the Windows Recycle Bin).
+## Default Controls
 
-## Optional: Thumbnail Previews (Thumbfast)
+The UI uses mouse controls for clicking, scrolling, selecting, dragging, and seeking.
 
-Cadre OSC includes built-in support for seekbar thumbnail previews using [thumbfast](https://github.com/po5/thumbfast?utm_source=gemini).
+| Shortcut | Action |
+| --- | --- |
+| `DEL` | Remove selected entries from the playlist. |
+| `Shift+DEL` | Move selected local files to the Windows Recycle Bin and remove them from the playlist. |
 
-To enable this feature:
+The playlist can also be opened or controlled through mpv script messages:
 
-1. Download `thumbfast.lua` from its repository.
-2. Place `thumbfast.lua` into your mpv `scripts` directory alongside the Cadre files.
-3. Cadre will automatically detect it and display thumbnails when hovering over the seekbar. No additional configuration is required.
+```text
+script-message toggle-playlist
+script-message playlist-next
+script-message playlist-prev
+```
+
+The titlebar can be toggled with:
+
+```text
+script-message toggle-titlebar
+```
+
+## Thumbfast Thumbnail Previews
+
+Cadre OSC can display seekbar thumbnails through [thumbfast](https://github.com/po5/thumbfast/).
+
+1. Place `thumbfast.lua` in mpv's `scripts` directory. The repository may already include a compatible copy.
+2. Keep `cadre_osc.lua` installed alongside it.
+3. Start or restart mpv and hover over the OSC seekbar.
+
+Cadre communicates with thumbfast automatically. Thumbfast's own configuration and external requirements still apply; consult its documentation if thumbnails do not appear.
+
+## Notes
+
+- Native dialogs and Recycle Bin operations are Windows-specific.
+- Playlist deletion is intended for local files. URLs and streams cannot be sent to the Recycle Bin.
+- The titlebar is most useful with `border=no`.
+- Reload or restart mpv after changing the theme or adding/removing Cadre component files.
+
+## License
+
+See the repository license for usage and redistribution terms.
