@@ -202,7 +202,6 @@ local function normalize_chapters(raw)
     return out
 end
 
--- Given a duration/time ratio → pixel x on the seek bar
 local function ratio_to_x(bar_x1, bar_w, ratio)
     return bar_x1 + bar_w * math.min(1, math.max(0, ratio))
 end
@@ -211,10 +210,8 @@ local function draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, seek_y, track_h, d
     if not dur or dur <= 0 or #chapters == 0 then return end
     local half_h = track_h / 2
     for _, c in ipairs(chapters) do
-        -- Skip chapter "0" start marker (YouTube doesn't draw a separator at t=0)
         if c.time > 0 and c.time < dur then
             local cx = ratio_to_x(bar_x1, bar_w, c.time / dur)
-            -- keep marks fully inside the bar bounds
             local mx1 = math.max(bar_x1, cx - CHAPTER_MARK_W)
             local mx2 = math.min(bar_x2, cx + CHAPTER_MARK_W)
             if mx2 > mx1 then
@@ -418,8 +415,6 @@ local function render()
 
   common.draw_rrect(ass, filled_x - THUMB_W, L.seek_y - THUMB_H, filled_x + THUMB_W, L.seek_y + THUMB_H, THUMB_RADIUS, THUMB_COLOR, "00")
 
-  -- one-time setup somewhere in your script init
--- Create this once, outside the drawing function/block.
   local measure_osd = mp.create_osd_overlay("ass-events")
   measure_osd.hidden = true
   measure_osd.compute_bounds = true
@@ -432,7 +427,6 @@ local function render()
       measure_osd.res_x = osd_w
       measure_osd.res_y = osd_h
 
-      -- Use the same relevant ASS properties as common.draw_text().
       measure_osd.data = string.format(
           "{\\pos(1000,1000)\\an5\\fn%s\\fs%d"
           .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
@@ -451,9 +445,6 @@ local function render()
       return utf8_char_count(text) * font_size * 0.5
   end
 
-
-  -- Put this inside the same drawing function where `ass`,
-  -- `bar_x1`, `bar_x2`, `mouse_x`, and `L.seek_y` exist.
   if hovering_seek and hovered_chapter and hovered_chapter.title then
       local text_w = measure_text_width(
           hovered_chapter.title,
@@ -461,7 +452,6 @@ local function render()
           UI_FONT
       )
 
-      -- Optional small correction for libass ink bounds.
       text_w = text_w + 2
 
       local pad_x = CHAPTER_TOOLTIP_PAD_X or 0
@@ -867,7 +857,6 @@ mp.observe_property("osd-dimensions", "native", function(name, val)
   if not val then return end
   screen_w = val.w
   screen_h = val.h
-  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
   render() 
 end)
 

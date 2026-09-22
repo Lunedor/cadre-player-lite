@@ -67,8 +67,6 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha)
   common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha)
 end
 
--- Layout branches on BUTTON_SIDE. Also returns title_x and title_align so
--- the title text is positioned/aligned correctly for each mode.
 local function get_layout()
   if BUTTON_SIDE == "left" then
     -- macOS order left-to-right: close, minimize, maximize/zoom.
@@ -77,8 +75,6 @@ local function get_layout()
       close_x1 = 0,
       minimize_x1 = BUTTON_WIDTH,
       maximize_x1 = BUTTON_WIDTH * 2,
-      -- Center the title in the space to the right of the button cluster,
-      -- mirroring macOS's centered-title look instead of hugging the buttons.
       title_x = BUTTON_WIDTH * 3 + ((screen_w - BUTTON_WIDTH * 3) / 2),
       title_align = "center",
     }

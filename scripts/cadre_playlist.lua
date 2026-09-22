@@ -1125,7 +1125,6 @@ mp.observe_property("osd-dimensions", "native", function(name, val)
   if not val then return end
   screen_w = val.w
   screen_h = val.h
-  -- Force your script to rebuild hitboxes and redraw now that true dimensions exist
   render() 
 end)
 
