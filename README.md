@@ -12,6 +12,8 @@
 
 Cadre is a modular UI suite for [mpv](https://mpv.io/). Its components can be used together as one interface or enabled separately according to your workflow.
 
+Cadre supports Windows and Linux. The UI is shared across both platforms, while native dialogs and file-trash integration use the platform-specific helpers described below.
+
 Every Cadre component requires these two shared files:
 
 - `cadre_common.lua` - shared helpers, native Windows dialogs, playlist actions, drawing utilities, and UI coordination.
@@ -22,6 +24,10 @@ The optional UI components are:
 - `cadre_osc.lua` - customizable on-screen controls, seeking, volume, chapter markers, chapter tooltips, and optional seek thumbnails.
 - `cadre_playlist.lua` - a visual playlist and queue manager.
 - `cadre_titlebar.lua` - a custom titlebar with minimize, maximize/restore, and close controls.
+
+The folder may also contain optional mpv utilities:
+
+- `thumbfast.lua` - on-demand seekbar thumbnail generation for compatible UI scripts.
 
 ## Features
 
@@ -43,7 +49,7 @@ The components detect one another when present and coordinate mouse input, windo
 - Customizable control bar layout: use a floating bar, a full-width bar, or configure your own dimensions and insets through `cadre_theme.lua`.
 - Seekbar with hover expansion and draggable seeking.
 - Volume flyout with a vertical volume slider.
-- Add-file, add-folder, and add-URL menus using native Windows dialogs.
+- Add-file, add-folder, and add-URL menus using native platform dialogs.
 - Previous, play/pause, next, stop, fullscreen, and playlist controls.
 - Chapter markers on the seekbar.
 - Chapter-name tooltips when hovering chapter markers.
@@ -57,7 +63,7 @@ The components detect one another when present and coordinate mouse input, windo
 - Double-click to play an item.
 - Drag-and-drop reordering, including selected groups.
 - Remove selected entries from the playlist.
-- Move local files to the Windows Recycle Bin with `Shift+DEL`.
+- Move local files to the platform trash/recycle bin with `Shift+DEL`.
 - Shuffle playback order without changing the visible playlist order.
 - Repeat modes: off, repeat playlist, and repeat current item.
 - Save and load M3U/M3U8 playlists.
@@ -77,13 +83,32 @@ The components detect one another when present and coordinate mouse input, windo
 
 ## Requirements
 
-- Windows.
 - A current mpv build.
-- PowerShell, used for native file/folder/URL dialogs and Recycle Bin integration.
 - `Material Icons Outlined` for the OSC and playlist icons.
-- `Segoe MDL2 Assets` for the titlebar icons.
-- `yt-dlp` in `PATH` if you want chapters loaded automatically from YouTube URLs.
+- `Segoe MDL2 Assets` for the default titlebar icons on Windows. On Linux, configure a font that contains the titlebar glyphs through `font_icon_tb` or `font_icon`.
+- `yt-dlp` in `PATH` if you want chapters loaded automatically from YouTube URLs or want to use the YouTube search utility.
+- `ffmpeg` in `PATH` if you want to use the YouTube search utility.
 - `thumbfast.lua` and its dependencies if you want seekbar thumbnail previews.
+
+### Windows
+
+- PowerShell, used for native file/folder/URL dialogs and Recycle Bin integration.
+
+### Linux
+
+Install at least one graphical dialog backend. Cadre tries `zenity` first and falls back to `kdialog` if the first backend cannot start:
+
+```bash
+# GTK-based desktops
+sudo apt install zenity
+
+# KDE-based desktops
+sudo apt install kdialog
+```
+
+Equivalent packages are available through other distributions' package managers. A canceled dialog is treated as cancellation; it does not open the fallback dialog. Linux trash support uses `gio trash` and then `trash-put` when available.
+
+For example, on Fedora use `sudo dnf install zenity` and on Arch use `sudo pacman -S zenity`.
 
 The UI can still run if optional icon fonts or optional integrations are unavailable, but some icons or features may not render or activate correctly.
 
@@ -114,7 +139,7 @@ The UI can still run if optional icon fonts or optional integrations are unavail
 
 4. Restart mpv. mpv automatically loads Lua scripts placed in its `scripts` directory.
 
-A typical Windows portable layout looks like this:
+A typical portable layout looks like this:
 
 ```text
 mpv/
@@ -124,7 +149,8 @@ mpv/
    ├─ cadre_theme.lua
    ├─ cadre_osc.lua
    ├─ cadre_playlist.lua
-   └─ cadre_titlebar.lua
+   ├─ cadre_titlebar.lua
+   └─ thumbfast.lua
 ```
 
 ## Choosing Components
@@ -137,6 +163,10 @@ Because mpv loads scripts from the `scripts` directory, selective use is easiest
 - Complete UI: all five Cadre files
 
 Other unrelated scripts can remain in the same directory.
+
+The optional utility scripts can be installed independently:
+
+- `thumbfast.lua` can be used by Cadre OSC or another compatible UI.
 
 ## Configuration and Themes
 
@@ -187,7 +217,7 @@ The UI uses mouse controls for clicking, scrolling, selecting, dragging, and see
 | Shortcut | Action |
 | --- | --- |
 | `DEL` | Remove selected entries from the playlist. |
-| `Shift+DEL` | Move selected local files to the Windows Recycle Bin and remove them from the playlist. |
+| `Shift+DEL` | Move selected local files to the platform trash/recycle bin and remove them from the playlist. |
 
 The playlist can also be opened or controlled through mpv script messages:
 
@@ -215,11 +245,13 @@ Cadre communicates with thumbfast automatically. Thumbfast's own configuration a
 
 ## Notes
 
-- Native dialogs and Recycle Bin operations are Windows-specific.
+- On Windows, native dialogs and Recycle Bin operations use PowerShell.
+- On Linux, dialogs require `zenity` or `kdialog`; trash operations require `gio` or `trash-put`.
 - Playlist deletion is intended for local files. URLs and streams cannot be sent to the Recycle Bin.
+- WSL is useful for testing the Linux dialog path, but graphics-driver warnings and trash failures on `/mnt/*` Windows mounts are environmental limitations, not supported Cadre behavior.
 - The titlebar is most useful with `border=no`.
 - Reload or restart mpv after changing the theme or adding/removing Cadre component files.
 
 ## License
 
-See the repository license for usage and redistribution terms.
+MIT License. See [LICENSE](LICENSE).
