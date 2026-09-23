@@ -40,10 +40,10 @@ local SHOW_MODE = theme.titlebar_show_mode_tb or theme.titlebar_show_mode or "au
 local BUTTON_SIDE = theme.titlebar_button_side_tb or theme.titlebar_button_side or "right"
 
 local ICON = {
-  minimize = "\u{E921}",
-  maximize = "\u{E922}",
-  restore = "\u{E923}",
-  close = "\u{E8BB}",
+  minimize = "\238\164\161",   -- U+E921
+  maximize = "\238\164\162",   -- U+E922
+  restore = "\238\164\163",    -- U+E923
+  close = "\238\162\187",      -- U+E8BB
 }
 
 --------------------------------------------------------------------------------

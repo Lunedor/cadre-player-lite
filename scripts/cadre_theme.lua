@@ -34,7 +34,7 @@ M.theme_author = "Lunedor"
 -- Most components will inherit these colors unless 
 -- specifically overridden in the sections below.
 
--- M.accent_color     = "63B8FF" -- Primary highlight (progress bar, active items, selections)
+M.accent_color     = "FFFFFF" -- Primary highlight (progress bar, active items, selections)
 -- M.background_color = "0A0C10" -- Deepest background color
 -- M.surface_color    = "0D1117" -- Elevated elements (control panels, titlebar backgrounds)
 -- M.text_color       = "F8FAFC" -- Primary bright text and active icons
@@ -101,7 +101,7 @@ M.theme_author = "Lunedor"
 -- M.thumb_radius         = 5   -- Corner roundness of the thumb (0 = square)
 
 -- Icon & Text Layout
--- M.icon_size            = 24
+M.icon_size            = 28
 -- M.icon_spacing         = 36  -- Horizontal space between control icons (play, pause, etc.)
 -- M.icon_row_offset      = 60  -- Distance from the top of the OSC panel down to the icons
 -- M.time_label_offset_y  = 16  -- Vertical offset for the current time/duration text
@@ -110,10 +110,10 @@ M.theme_author = "Lunedor"
 -- OSC Specific Colors
 -- M.font_icon_osc            = "Material Icons Outlined"
 -- M.color_bar_bg_osc         = "0D1117" -- OSC panel background
--- M.alpha_bar_bg_osc         = "1C"
--- M.color_icon_osc           = "F8FAFC"
--- M.color_text_osc           = "F8FAFC"
--- M.alpha_icon_dim_osc       = "60"
+M.alpha_bar_bg_osc         = "60"
+M.color_icon_osc           = "FFFFFF"
+M.color_text_osc           = "FFFFFF"
+M.alpha_icon_dim_osc       = "00"
 
 -- Track & Progress Colors
 -- M.color_track_fg_osc       = "63B8FF" -- Foreground: the filled, "played" portion of the timeline
@@ -127,13 +127,13 @@ M.theme_author = "Lunedor"
 -- M.alpha_chapter_mark         = "20"
 -- M.chapter_mark_width         = 2  -- Thickness of chapter lines
 -- M.chapter_hover_px           = 8  -- How close the mouse needs to be (in pixels) to trigger the chapter name
--- M.chapter_tooltip_size       = 18 -- Font size of the chapter hover text
--- M.chapter_tooltip_offset_y   = 36 -- Distance to push the tooltip above the timeline
+M.chapter_tooltip_size       = 18 -- Font size of the chapter hover text
+M.chapter_tooltip_offset_y   = 42 -- Distance to push the tooltip above the timeline
 -- M.chapter_tooltip_bg_color   = "0A0C10"
--- M.chapter_tooltip_bg_alpha   = "30"
--- M.chapter_tooltip_radius     = 8
--- M.chapter_tooltip_pad_x      = 8
--- M.chapter_tooltip_pad_y      = 10
+M.chapter_tooltip_bg_alpha   = "70"
+M.chapter_tooltip_radius     = 8
+M.chapter_tooltip_pad_x      = 12
+M.chapter_tooltip_pad_y      = 14
 
 ----------------------------------------------------------
 -- 5. PLAYLIST PANEL (_pl)

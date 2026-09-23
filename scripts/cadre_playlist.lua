@@ -52,22 +52,21 @@ math.randomseed(os.time())
 
 
 local ICON = {
-  search = "\u{E8B6}",
-  shuffle = "\u{E043}",
-  save = "\u{E161}",
-  load = "\u{E166}",
-  remove = "\u{E15B}",
-  delete = "\u{E872}",
-  repeat_all = "\u{E040}",
-  repeat_one = "\u{E041}",
-  play = "\u{E037}",
-  pause = "\u{E034}",
-  add = "\u{E145}",
-  add_file = "\u{E24D}",
-  add_folder = "\u{E2CC}",
-  add_url = "\u{E157}",
+  search = "\238\162\182",      -- U+E8B6
+  shuffle = "\238\129\131",     -- U+E043
+  save = "\238\133\161",        -- U+E161
+  load = "\238\133\166",        -- U+E166
+  remove = "\238\133\155",      -- U+E15B
+  delete = "\238\161\178",      -- U+E872
+  repeat_all = "\238\129\128",  -- U+E040
+  repeat_one = "\238\129\129",  -- U+E041
+  play = "\238\128\183",        -- U+E037
+  pause = "\238\128\180",       -- U+E034
+  add = "\238\133\133",         -- U+E145
+  add_file = "\238\137\141",    -- U+E24D
+  add_folder = "\238\139\140",  -- U+E2CC
+  add_url = "\238\133\151",     -- U+E157
 }
-
 --------------------------------------------------------------------------------
 -- STATE
 --------------------------------------------------------------------------------
@@ -445,18 +444,6 @@ local function remove_selected()
   refresh_playlist()
 end
 
-local function send_to_recycle_bin(path)
-  local res = utils.subprocess({ args = { "powershell", "-NoProfile", "-Command",
-    string.format("Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')", path:gsub("'", "''"))
-  }, cancellable = false })
-  if res.status ~= 0 then
-    mp.osd_message("Failed to move file to Recycle Bin", 3)
-    msg.error("recycle bin move failed: " .. (res.error or "unknown error"))
-    return false
-  end
-  return true
-end
-
 local function delete_selected_to_recycle_bin()
   local indices = sorted_selected_indices()
   if #indices == 0 then return end
@@ -476,7 +463,7 @@ local function delete_selected_to_recycle_bin()
   end
   local moved = 0
   for _, path in ipairs(paths) do
-    if send_to_recycle_bin(path) then moved = moved + 1 end
+    if common.send_to_trash(path) then moved = moved + 1 end
   end
   if moved > 0 then
     mp.osd_message("Moved " .. moved .. " file" .. (moved == 1 and "" or "s") .. " to Recycle Bin", 2)

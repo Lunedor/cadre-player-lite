@@ -177,6 +177,30 @@ end
 --------------------------------------------------------------------------------
 
 local UTF8_PREAMBLE = "[Console]::OutputEncoding = [Text.Encoding]::UTF8; "
+local PLATFORM = mp.get_property("platform") or ""
+local IS_WINDOWS = PLATFORM == "windows"
+
+local function run_command(args)
+  local res = utils.subprocess({ args = args, cancellable = false })
+  if res.status == 0 then return res.stdout or "", nil end
+  return nil, res.error
+end
+
+local function linux_filter_args(filter)
+  local args = {}
+  for label, patterns in filter:gmatch("([^|]+)|([^|]+)") do
+    patterns = patterns:gsub(";", " "):gsub("%*%.%*", "*")
+    args[#args + 1] = label .. " | " .. patterns
+  end
+  return args
+end
+
+local function linux_dialog(args, kdialog_args)
+  local out, error = run_command(args)
+  if out ~= nil then return out end
+  if not error then return nil end
+  return run_command(kdialog_args)
+end
 
 local function run_ps(script)
   local res = utils.subprocess({
@@ -195,6 +219,32 @@ function M.pick_files_dialog(opts)
   local title = opts.title or "Open File"
   local filter = opts.filter or "All files|*.*"
   local multi = opts.multiselect ~= false
+
+  if not IS_WINDOWS then
+    local zenity_args = { "zenity", "--file-selection", "--title", title }
+    for _, value in ipairs(linux_filter_args(filter)) do
+      zenity_args[#zenity_args + 1] = "--file-filter=" .. value
+    end
+    if multi then
+      zenity_args[#zenity_args + 1] = "--multiple"
+      zenity_args[#zenity_args + 1] = "--separator=\n"
+    end
+
+    local kdialog_args = { "kdialog", "--title", title, "--getopenfilename", "." }
+    if multi then
+      kdialog_args[#kdialog_args + 1] = "--multiple"
+      kdialog_args[#kdialog_args + 1] = "--separate-output"
+    end
+    kdialog_args[#kdialog_args + 1] = filter:gsub("|", " "):gsub(";", " ")
+
+    local out = linux_dialog(zenity_args, kdialog_args)
+    local paths = {}
+    if out then
+      for line in out:gmatch("[^\r\n]+") do paths[#paths + 1] = line end
+    end
+    return paths
+  end
+
   local script = string.format([[
 Add-Type -AssemblyName System.Windows.Forms
 $f = New-Object System.Windows.Forms.OpenFileDialog
@@ -217,6 +267,19 @@ end
 function M.pick_folder_dialog(opts)
   opts = opts or {}
   local desc = opts.description or "Select Folder"
+
+  if not IS_WINDOWS then
+    local out = linux_dialog(
+      { "zenity", "--file-selection", "--directory", "--title", desc },
+      { "kdialog", "--title", desc, "--getexistingdirectory", "." }
+    )
+    if out then
+      out = out:gsub("[\r\n]+$", "")
+      if out ~= "" then return out end
+    end
+    return nil
+  end
+
   local script = string.format([[
 Add-Type -AssemblyName System.Windows.Forms
 $f = New-Object System.Windows.Forms.FolderBrowserDialog
@@ -236,6 +299,19 @@ function M.prompt_text_dialog(opts)
   opts = opts or {}
   local title = opts.title or "Enter URL"
   local label = opts.label or "URL:"
+
+  if not IS_WINDOWS then
+    local out = linux_dialog(
+      { "zenity", "--entry", "--title", title, "--text", label },
+      { "kdialog", "--title", title, "--inputbox", label }
+    )
+    if out then
+      out = out:gsub("[\r\n]+$", "")
+      if out ~= "" then return out end
+    end
+    return nil
+  end
+
   local script = string.format([[
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -286,35 +362,75 @@ function M.save_file_dialog(opts)
   local title = opts.title or "Save File"
   local filter = opts.filter or "Playlist files (*.m3u8)|*.m3u8|All files|*.*"
   local default_name = opts.default_name or ""
+
+  if not IS_WINDOWS then
+    local zenity_args = { "zenity", "--file-selection", "--save", "--confirm-overwrite", "--title", title }
+    if default_name ~= "" then
+      zenity_args[#zenity_args + 1] = "--filename=" .. default_name
+    end
+    for _, value in ipairs(linux_filter_args(filter)) do
+      zenity_args[#zenity_args + 1] = "--file-filter=" .. value
+    end
+
+    local kdialog_args = { "kdialog", "--title", title, "--getsavefilename", default_name,
+      filter:gsub("|", " "):gsub(";", " ") }
+    local out = linux_dialog(zenity_args, kdialog_args)
+    if out then
+      out = out:gsub("[\r\n]+$", "")
+      if out ~= "" then return out end
+    end
+    return nil
+  end
+
   local script = string.format([[
-Add-Type -AssemblyName System.Windows.Forms
-$f = New-Object System.Windows.Forms.SaveFileDialog
-$f.Title = '%s'
-$f.Filter = '%s'
-$f.FileName = '%s'
-if ($f.ShowDialog() -eq 'OK') { $f.FileName }
-]], title:gsub("'", "''"), filter:gsub("'", "''"), default_name:gsub("'", "''"))
+    Add-Type -AssemblyName System.Windows.Forms
+    $f = New-Object System.Windows.Forms.SaveFileDialog
+    $f.Title = '%s'
+    $f.Filter = '%s'
+    $f.FileName = '%s'
+    if ($f.ShowDialog() -eq 'OK') { $f.FileName }
+    ]], title:gsub("'", "''"), filter:gsub("'", "''"), default_name:gsub("'", "''"))
 
-  local out = run_ps(script)
-  if out then
-    out = out:gsub("[\r\n]+$", "")
-    if out ~= "" then return out end
-  end
-  return nil
-end
+      local out = run_ps(script)
+      if out then
+        out = out:gsub("[\r\n]+$", "")
+        if out ~= "" then return out end
+      end
+      return nil
+    end
 
-function M.get_workarea()
-  local script = [[
-Add-Type -AssemblyName System.Windows.Forms
-$wa = [System.Windows.Forms.Screen]::FromPoint([System.Windows.Forms.Cursor]::Position).WorkingArea
-"$($wa.Width)x$($wa.Height)+$($wa.Left)+$($wa.Top)"
-]]
-  local out = run_ps(script)
-  if out then
-    out = out:gsub("[\r\n]+$", "")
-    if out ~= "" then return out end
-  end
-  return nil
+    function M.get_workarea()
+      local script = [[
+    Add-Type -AssemblyName System.Windows.Forms
+    $wa = [System.Windows.Forms.Screen]::FromPoint([System.Windows.Forms.Cursor]::Position).WorkingArea
+    "$($wa.Width)x$($wa.Height)+$($wa.Left)+$($wa.Top)"
+    ]]
+      local out = run_ps(script)
+      if out then
+        out = out:gsub("[\r\n]+$", "")
+        if out ~= "" then return out end
+      end
+      return nil
+    end
+
+    function M.send_to_trash(path)
+      if not path or path == "" then return false end
+
+      if IS_WINDOWS then
+        local res = utils.subprocess({ args = { "powershell", "-NoProfile", "-Command",
+          string.format("Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('%s', 'OnlyErrorDialogs', 'SendToRecycleBin')", path:gsub("'", "''"))
+        }, cancellable = false })
+        if res.status ~= 0 then
+          msg.error("recycle bin move failed: " .. (res.error or res.stderr or "unknown error"))
+          return false
+        end
+        return true
+      end
+
+      if run_command({ "gio", "trash", path }) then return true end
+      if run_command({ "trash-put", path }) then return true end
+      msg.error("could not move file to trash: no gio or trash-put command succeeded")
+      return false
 end
 
 --------------------------------------------------------------------------------

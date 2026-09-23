@@ -73,19 +73,19 @@ local CHAPTER_TOOLTIP_PAD_X = theme.chapter_tooltip_pad_x or 8
 local CHAPTER_TOOLTIP_PAD_Y = theme.chapter_tooltip_pad_y or 10
 
 local ICON = {
-  play = "\u{E037}",
-  pause = "\u{E034}",
-  prev = "\u{E045}",
-  next = "\u{E044}",
-  stop = "\u{E047}",
-  volume_up = "\u{E050}",
-  volume_off = "\u{E04F}",
-  add = "\u{E145}",
-  fullscreen = "\u{E5D0}",
-  playlist = "\u{E05F}",
-  add_file = "\u{E24D}",
-  add_folder = "\u{E2CC}",
-  add_url = "\u{E157}",
+  play = "\238\128\183",        -- U+E037
+  pause = "\238\128\180",       -- U+E034
+  prev = "\238\129\133",        -- U+E045
+  next = "\238\129\132",        -- U+E044
+  stop = "\238\129\135",        -- U+E047
+  volume_up = "\238\129\144",   -- U+E050
+  volume_off = "\238\129\143",  -- U+E04F
+  add = "\238\133\133",         -- U+E145
+  fullscreen = "\238\151\144",  -- U+E5D0
+  playlist = "\238\129\159",    -- U+E05F
+  add_file = "\238\137\141",    -- U+E24D
+  add_folder = "\238\139\140",  -- U+E2CC
+  add_url = "\238\133\151",     -- U+E157
 }
 
 --------------------------------------------------------------------------------
