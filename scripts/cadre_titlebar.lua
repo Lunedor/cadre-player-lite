@@ -22,13 +22,39 @@ common.register_script("cadre_titlebar")
 local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
 
 local UI_FONT = theme.font_ui or theme.font_text or "Inter"
-local ICON_FONT = theme.font_icon_tb or theme.font_icon or "Segoe MDL2 Assets"
+local ICON_FONT = "Segoe MDL2 Assets"
 local TEXT = common.bgr(theme.color_text_tb or theme.text_color or "E2E8F0")
 local TITLE_FONT_SIZE = theme.title_font_size_tb or theme.title_font_size or theme.font_size or 18
 local BARBG = common.bgr(theme.color_bar_bg_tb or theme.surface_color or "07080B")
 local DANGER = common.bgr(theme.color_danger_tb or theme.danger_color or "EF4444")
 local HOVERBG = common.bgr(theme.color_hover_bg_tb or "181C26")
+
+local BUTTONBG = common.bgr(
+    theme.color_button_bg_tb or
+    theme.color_hover_bg_tb or
+    "181C26"
+)
+
+local BUTTON_PRESSEDBG = common.bgr(
+    theme.color_button_pressed_bg_tb or
+    theme.color_button_bg_tb or
+    "181C26"
+)
+
+local CLOSEBG = common.bgr(
+    theme.color_close_bg_tb or
+    theme.color_danger_tb or
+    "EF4444"
+)
+
 local ALPHA_BAR_BG = theme.alpha_bar_bg_tb or theme.alpha_bar_bg or "38"
+
+local ALPHA_BUTTON_BG = theme.alpha_button_bg_tb or "20"
+local ALPHA_BUTTON_PRESSED = theme.alpha_button_pressed_bg_tb or "38"
+local ALPHA_CLOSE_BG = theme.alpha_close_bg_tb or "70"
+
+local BUTTON_RADIUS = theme.button_radius_tb or 4
+local CLOSE_BUTTON_RADIUS = theme.close_button_radius_tb or 4
 
 local BAR_HEIGHT = theme.bar_height_tb or 36
 local BUTTON_WIDTH = theme.button_width_tb or 44
@@ -68,26 +94,36 @@ local function draw_icon(ass, glyph, cx, cy, size, color, alpha)
 end
 
 local function get_layout()
-  if BUTTON_SIDE == "left" then
-    -- macOS order left-to-right: close, minimize, maximize/zoom.
-    return {
-      x1 = 0, y1 = 0, x2 = screen_w, y2 = BAR_HEIGHT,
-      close_x1 = 0,
-      minimize_x1 = BUTTON_WIDTH,
-      maximize_x1 = BUTTON_WIDTH * 2,
-      title_x = BUTTON_WIDTH * 3 + ((screen_w - BUTTON_WIDTH * 3) / 2),
-      title_align = "center",
-    }
-  else
-    return {
-      x1 = 0, y1 = 0, x2 = screen_w, y2 = BAR_HEIGHT,
-      close_x1 = screen_w - BUTTON_WIDTH,
-      maximize_x1 = screen_w - BUTTON_WIDTH * 2,
-      minimize_x1 = screen_w - BUTTON_WIDTH * 3,
-      title_x = 16,
-      title_align = "left",
-    }
-  end
+    if BUTTON_SIDE == "left" then
+        return {
+            x1 = 0,
+            y1 = 0,
+            x2 = screen_w,
+            y2 = BAR_HEIGHT,
+
+            close_x1 = 0,
+            minimize_x1 = BUTTON_WIDTH,
+            maximize_x1 = BUTTON_WIDTH * 2,
+
+            title_x = BUTTON_WIDTH * 3
+                + ((screen_w - BUTTON_WIDTH * 3) / 2),
+            title_align = "center",
+        }
+    else
+        return {
+            x1 = 0,
+            y1 = 0,
+            x2 = screen_w,
+            y2 = BAR_HEIGHT,
+
+            close_x1 = screen_w - BUTTON_WIDTH,
+            maximize_x1 = screen_w - BUTTON_WIDTH * 2,
+            minimize_x1 = screen_w - BUTTON_WIDTH * 3,
+
+            title_x = 16,
+            title_align = "left",
+        }
+    end
 end
 
 --------------------------------------------------------------------------------
@@ -161,19 +197,70 @@ local function render()
   local hover_close = mouse_x >= L.close_x1 and mouse_x < L.close_x1 + BUTTON_WIDTH and mouse_y < BAR_HEIGHT
 
   if hover_min or pressed_button == "minimize" then
-    common.draw_rrect(ass, L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, HOVERBG,
-      pressed_button == "minimize" and "38" or "20")
-  end
-  draw_icon(ass, ICON.minimize, L.minimize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
+        common.draw_rrect(
+            ass,
+            L.minimize_x1,
+            0,
+            L.minimize_x1 + BUTTON_WIDTH,
+            BAR_HEIGHT,
+            BUTTON_RADIUS,
+            pressed_button == "minimize" and BUTTON_PRESSEDBG or BUTTONBG,
+            pressed_button == "minimize"
+                and ALPHA_BUTTON_PRESSED
+                or ALPHA_BUTTON_BG
+        )
+    end
+
+    if hover_max or pressed_button == "maximize" then
+        common.draw_rrect(
+            ass,
+            L.maximize_x1,
+            0,
+            L.maximize_x1 + BUTTON_WIDTH,
+            BAR_HEIGHT,
+            BUTTON_RADIUS,
+            pressed_button == "maximize" and BUTTON_PRESSEDBG or BUTTONBG,
+            pressed_button == "maximize"
+                and ALPHA_BUTTON_PRESSED
+                or ALPHA_BUTTON_BG
+        )
+    end
+  draw_icon(
+      ass,
+      ICON.minimize,
+      L.minimize_x1 + BUTTON_WIDTH / 2,
+      BAR_HEIGHT / 2,
+      10,
+      TEXT,
+      "20"
+  )
   common.add_hitbox(hitboxes, "minimize", L.minimize_x1, 0, L.minimize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
     mp.commandv("cycle", "window-minimized")
   end)
 
   if hover_max or pressed_button == "maximize" then
-    common.draw_rrect(ass, L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, 0, HOVERBG,
-      pressed_button == "maximize" and "38" or "20")
+    common.draw_rrect(
+        ass,
+        L.maximize_x1,
+        0,
+        L.maximize_x1 + BUTTON_WIDTH,
+        BAR_HEIGHT,
+        BUTTON_RADIUS,
+        pressed_button == "maximize" and BUTTON_PRESSEDBG or BUTTONBG,
+        pressed_button == "maximize"
+            and ALPHA_BUTTON_PRESSED
+            or ALPHA_BUTTON_BG
+    )
   end
-  draw_icon(ass, is_maximized and ICON.restore or ICON.maximize, L.maximize_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
+  draw_icon(
+      ass,
+      is_maximized and ICON.restore or ICON.maximize,
+      L.maximize_x1 + BUTTON_WIDTH / 2,
+      BAR_HEIGHT / 2,
+      10,
+      TEXT,
+      "20"
+  )
   common.add_hitbox(hitboxes, "maximize", L.maximize_x1, 0, L.maximize_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
     local now = mp.get_time()
     if now - last_maximize_toggle_time < MAXIMIZE_COOLDOWN_SEC then return end
@@ -198,7 +285,16 @@ local function render()
   end)
 
   if hover_close then
-    common.draw_rrect(ass, L.close_x1, 0, L.close_x1 + BUTTON_WIDTH, BAR_HEIGHT, 4, DANGER, "70")
+        common.draw_rrect(
+        ass,
+        L.close_x1,
+        0,
+        L.close_x1 + BUTTON_WIDTH,
+        BAR_HEIGHT,
+        CLOSE_BUTTON_RADIUS,
+        CLOSEBG,
+        ALPHA_CLOSE_BG
+    )
   end
   draw_icon(ass, ICON.close, L.close_x1 + BUTTON_WIDTH / 2, BAR_HEIGHT / 2, 10, TEXT, "20")
   common.add_hitbox(hitboxes, "close", L.close_x1, 0, L.close_x1 + BUTTON_WIDTH, BAR_HEIGHT, function()
@@ -328,8 +424,13 @@ mp.register_script_message("toggle-titlebar", vis.toggle_pinned)
 mp.observe_property("fullscreen", "bool", function(_, v)
   if v then
     bar_visible = false
-    render()
+  elseif vis.is_pinned() then
+    bar_visible = true
+  else
+    bar_visible = false
+    vis.poll()
   end
+  render()
 end)
 
 mp.observe_property("osd-dimensions", "native", function(name, val)

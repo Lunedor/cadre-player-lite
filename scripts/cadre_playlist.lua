@@ -21,7 +21,7 @@ local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_pl or theme.font_icon or "Material Icons Outlined"
 local ICON_COLOR = common.bgr(theme.color_icon_pl or theme.text_color or "CBD5E1")
 local TEXT = common.bgr(theme.color_text_pl or theme.text_color or "F8FAFC")
-local FONT_SIZE = theme.font_size or theme.font_size_pl or 16
+local FONT_SIZE = theme.font_size_pl or theme.font_size or 16
 local TITLE_FONT_SIZE = theme.title_font_size_pl or theme.title_font_size or theme.font_size or 18
 local DIM = common.bgr(theme.color_dim_pl or theme.dim_color or "64748B")
 local BARBG = common.bgr(theme.color_bar_bg_pl or theme.surface_color or "0B0E14")
@@ -31,9 +31,22 @@ local SCROLL_FG = common.bgr(theme.color_scroll_fg_pl or "475569")
 local SCROLL_BG = common.bgr(theme.color_scroll_bg_pl or "0F172A")
 local SELECTED_COLOR = common.bgr(theme.color_selected_pl or theme.accent_color or "63B8FF")
 local NOW_PLAYING_COLOR = common.bgr(theme.color_current_pl or theme.accent_color or "63B8FF")
+local HOVER_COLOR = common.bgr(theme.color_hover_pl or "252A31")
+local INDEX_COLOR = common.bgr(theme.color_index_pl or theme.color_dim_pl or theme.dim_color or "CBD5E1")
+local DURATION_COLOR = common.bgr(theme.color_duration_pl or theme.color_dim_pl or theme.dim_color or "CBD5E1")
 local ICON_DIM_A = theme.alpha_icon_dim_pl or theme.alpha_icon_dim or "60"
 
 local ROW_HEIGHT = theme.row_height_pl or theme.row_height or 42
+local ROW_PADDING_X = theme.row_padding_x_pl or 16
+local ROW_GAP = theme.row_gap_pl or 2
+local ROW_RADIUS = theme.row_radius_pl or 6
+local TITLE_OFFSET_X = theme.title_offset_x_pl or 42
+local ROW_RIGHT_INSET_X = theme.row_right_inset_x_pl or 16
+local HOVER_ALPHA = theme.alpha_hover_pl or "40"
+local SELECTED_ALPHA = theme.alpha_selected_pl or "60"
+local CURRENT_ALPHA = theme.alpha_current_pl or "88"
+local INDEX_ALPHA = theme.alpha_index_pl or "30"
+local DURATION_ALPHA = theme.alpha_duration_pl or "00"
 local RADIUS = theme.bar_radius_pl or theme.bar_radius or 20
 local TOOLBAR_HEIGHT = theme.toolbar_height_pl or theme.toolbar_height or 42
 local HEADER_HEIGHT = theme.header_height_pl or theme.header_height or 42
@@ -47,6 +60,9 @@ local SCROLLBAR_WIDTH = theme.scrollbar_width_pl or theme.scrollbar_width or 4
 local HOVER_STRIP_WIDTH = theme.hover_strip_width_pl or theme.hover_strip_width or 16
 local HIDE_DELAY_SEC = theme.hide_delay_sec_pl or theme.hide_delay_sec or 0.35
 local OSC_BOTTOM_EXCLUSION = theme.osc_bottom_exclusion_pl or theme.osc_bottom_exclusion or 125
+local ICON_SIZE = theme.icon_size_pl or 18
+local TOOLBAR_ICON_SIZE = theme.toolbar_icon_size_pl or 20
+local TOOLBAR_ICON_SPACING = theme.toolbar_icon_spacing_pl or 34
 
 math.randomseed(os.time())
 
@@ -636,7 +652,7 @@ function render()
   draw_text(ass, count_str, L.x1 + 16, L.y1 + 30, TITLE_FONT_SIZE - 2, TEXT, "20", 4, false)
 
   local search_icon_x = L.x2 - 24
-  draw_icon(ass, ICON.search, search_icon_x, L.y1 + 20, 18, ICON_COLOR, search_active and "30" or "60")
+  draw_icon(ass, ICON.search, search_icon_x, L.y1 + 20, ICON_SIZE, ICON_COLOR, search_active and "30" or "60")
   add_hitbox("toggle_search", search_icon_x - 14, L.y1 + 4, search_icon_x + 14, L.y1 + 34, function()
     search_active = not search_active
     if search_active then
@@ -671,19 +687,25 @@ function render()
     local real_idx = entry_wrap.real_index
     local entry = entry_wrap.item
     local row_y1 = L.list_y1 + row * ROW_HEIGHT
-    local row_y2 = row_y1 + ROW_HEIGHT - 2
+    local row_y2 = row_y1 + math.max(1, ROW_HEIGHT - ROW_GAP)
 
     local is_current = (real_idx == current_index)
     local is_selected = selected_indices[real_idx] == true
     local is_drop_target = drag.active and drag.current_target == real_idx
+    local is_hovered = mouse_x >= L.x1 and mouse_x <= L.x2
+      and mouse_y >= row_y1 and mouse_y <= row_y2
+
+    if is_hovered then
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, ROW_RADIUS, HOVER_COLOR, HOVER_ALPHA)
+    end
 
     if is_selected then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, SELECTED_COLOR, "60")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, ROW_RADIUS, SELECTED_COLOR, SELECTED_ALPHA)
       draw_rrect(ass, L.x1 + 6, row_y1, L.x1 + 9, row_y2, 1, SELECTED_COLOR, "20")
     end
 
     if is_current then
-      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, 6, NOW_PLAYING_COLOR, "88")
+      draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, ROW_RADIUS, NOW_PLAYING_COLOR, CURRENT_ALPHA)
     end
 
     if is_drop_target then
@@ -695,8 +717,8 @@ function render()
     end
 
     local idx_str = string.format("%02d", real_idx + 1)
-    draw_text(ass, idx_str, L.x1 + 16, (row_y1 + row_y2) / 2, FONT_SIZE - 2,
-      TEXT, "30", 4, is_current)
+    draw_text(ass, idx_str, L.x1 + ROW_PADDING_X, (row_y1 + row_y2) / 2, FONT_SIZE - 2,
+      INDEX_COLOR, INDEX_ALPHA, 4, is_current)
 
     local cached_duration = duration_cache[entry.filename]
     local dur_str = cached_duration and fmt_time(cached_duration) or ""
@@ -710,18 +732,18 @@ function render()
     title = truncate_utf8(title, max_chars)
 
     local title_color = TEXT
-    draw_text(ass, title, L.x1 + 42, (row_y1 + row_y2) / 2, TITLE_FONT_SIZE, title_color, "00", 4, is_current)
+    draw_text(ass, title, L.x1 + TITLE_OFFSET_X, (row_y1 + row_y2) / 2, TITLE_FONT_SIZE, title_color, "00", 4, is_current)
 
-    local rx_right = L.x2 - 16 - SCROLLBAR_WIDTH
+    local rx_right = L.x2 - ROW_RIGHT_INSET_X - SCROLLBAR_WIDTH
     if is_current then
       local paused = mp.get_property_bool("pause", false)
-      draw_icon(ass, paused and ICON.pause or ICON.play, rx_right, (row_y1 + row_y2) / 2, 14, TEXT, ICON_DIM)
-      rx_right = rx_right - 24
+      draw_icon(ass, paused and ICON.pause or ICON.play, rx_right, (row_y1 + row_y2) / 2, ICON_SIZE, TEXT, ICON_DIM)
+      rx_right = rx_right - ICON_SIZE - 6
     end
 
     if dur_str ~= "" then
       draw_text(ass, dur_str, rx_right, (row_y1 + row_y2) / 2, FONT_SIZE - 2,
-        TEXT, "00", 6, false)
+        DURATION_COLOR, DURATION_ALPHA, 6, false)
     end
 
     add_hitbox("row_" .. real_idx, L.x1 + 6, row_y1, L.x2 - 6, row_y2, function()
@@ -744,38 +766,38 @@ function render()
 
   local tx = L.x1 + 20
   local ty = L.toolbar_y1 + TOOLBAR_HEIGHT / 2
-  local spacing = 34
+  local spacing = TOOLBAR_ICON_SPACING
 
-  draw_icon(ass, ICON.shuffle, tx, ty, 20, ICON_COLOR, shuffle_on and "00" or "60")
+  draw_icon(ass, ICON.shuffle, tx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, shuffle_on and "00" or "60")
   add_hitbox("shuffle", tx - 14, ty - 14, tx + 14, ty + 14, toggle_shuffle)
   tx = tx + spacing
 
   local rep_icon = repeat_mode == "one" and ICON.repeat_one or ICON.repeat_all
   local rep_color = ICON_COLOR
-  draw_icon(ass, rep_icon, tx, ty, 20, rep_color, repeat_mode ~= "off" and "00" or "60")
+  draw_icon(ass, rep_icon, tx, ty, TOOLBAR_ICON_SIZE, rep_color, repeat_mode ~= "off" and "00" or "60")
   add_hitbox("repeat", tx - 14, ty - 14, tx + 14, ty + 14, cycle_repeat)
 
-  local rx = L.x2 - 20 - SCROLLBAR_WIDTH
-  draw_icon(ass, ICON.delete, rx, ty, 20, DANGER, "30")
+  local rx = L.x2 - TOOLBAR_ICON_SIZE - SCROLLBAR_WIDTH
+  draw_icon(ass, ICON.delete, rx, ty, TOOLBAR_ICON_SIZE, DANGER, "30")
   add_hitbox("delete", rx - 14, ty - 14, rx + 14, ty + 14, delete_selected_to_recycle_bin)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.remove, rx, ty, 20, ICON_COLOR, ICON_DIM)
+  draw_icon(ass, ICON.remove, rx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, ICON_DIM)
   add_hitbox("remove", rx - 14, ty - 14, rx + 14, ty + 14, remove_selected)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.save, rx, ty, 20, ICON_COLOR, ICON_DIM)
+  draw_icon(ass, ICON.save, rx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, ICON_DIM)
   add_hitbox("save", rx - 14, ty - 14, rx + 14, ty + 14, do_save_playlist)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.load, rx, ty, 20, ICON_COLOR, ICON_DIM)
+  draw_icon(ass, ICON.load, rx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, ICON_DIM)
   add_hitbox("load", rx - 14, ty - 14, rx + 14, ty + 14, function()
     load_append_mode = false
     do_load_playlist()
   end)
   rx = rx - spacing
 
-  draw_icon(ass, ICON.add, rx, ty, 20, ICON_COLOR, ICON_DIM)
+  draw_icon(ass, ICON.add, rx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, ICON_DIM)
   add_hitbox("pl_add", rx - 14, ty - 14, rx + 14, ty + 14, function()
     add_menu_open = not add_menu_open
   end)

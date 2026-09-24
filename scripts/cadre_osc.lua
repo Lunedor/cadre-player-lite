@@ -42,6 +42,10 @@ local ICON_DIM_A = theme.alpha_icon_dim_osc or theme.alpha_icon_dim or "60"
 
 local BAR_HEIGHT = theme.bar_height_osc or theme.bar_height or 100
 local BAR_SIDE_INSET = theme.bar_side_inset_osc or theme.bar_side_inset or 0
+local BAR_Y_ANCHOR = theme.bar_y_anchor_osc == "top" and "top"
+  or theme.bar_y_anchor_osc == "center" and "center"
+  or "bottom"
+local BAR_TOP_INSET = theme.bar_top_inset_osc or 0
 local BAR_BOTTOM_INSET = theme.bar_bottom_inset_osc or theme.bar_bottom_inset or 0
 local BAR_RADIUS = theme.bar_radius_osc or theme.bar_radius or 0
 local AUTOHIDE_SEC = theme.bar_autohide_sec_osc or theme.bar_autohide_sec or 0.4
@@ -49,15 +53,66 @@ local AUTOHIDE_SEC = theme.bar_autohide_sec_osc or theme.bar_autohide_sec or 0.4
 local THUMB_W = theme.thumb_width or 4
 local THUMB_H = theme.thumb_height or 10
 local THUMB_RADIUS = theme.thumb_radius or 5
+local SEEK_BORDER_COLOR = common.bgr(theme.seek_border_color_osc or "FFFFFF")
+local SEEK_BORDER_ALPHA = theme.seek_border_alpha_osc or "FF"
+local SEEK_BORDER_WIDTH = theme.seek_border_width_osc or 1
+local THUMB_BORDER_COLOR = common.bgr(theme.thumb_border_color_osc or "000000")
+local THUMB_BORDER_ALPHA = theme.thumb_border_alpha_osc or "FF"
+local THUMB_BORDER_WIDTH = theme.thumb_border_width_osc or 1
 local SEEK_Y_OFFSET = theme.seek_y_offset or 14
 local SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 6
 local SEEK_HEIGHT_HOVER = theme.seek_height_hover or 10
-local SIDE_MARGIN = theme.side_margin or 24
+local SEEK_SIDE_INSET = theme.seek_side_inset_osc or theme.side_margin or 24
+local BUTTON_LEFT_INSET = theme.button_left_inset_osc or theme.side_margin or 24
+local BUTTON_RIGHT_INSET = theme.button_right_inset_osc or theme.side_margin or 24
+local BUTTON_Y_ANCHOR = theme.button_y_anchor_osc == "bottom" and "bottom" or "top"
+local BUTTON_ROW_OFFSET = theme.button_row_offset_osc or theme.button_row_offset or 60
 
-local ICON_ROW_OFFSET = theme.icon_row_offset or 60
 local ICON_SPACING = theme.icon_spacing or 36
 local ICON_SIZE = theme.icon_size or 24
+local TIME_ITEM_WIDTH = theme.time_item_width_osc or 150
 local TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16
+local TIME_LABEL_OUTLINE_WIDTH = theme.time_label_outline_osc and (theme.time_label_outline_width_osc or 2) or 0
+local TIME_LABEL_OUTLINE_COLOR = common.bgr(theme.time_label_outline_color_osc or "000000")
+local TIME_LABEL_OUTLINE_ALPHA = theme.time_label_outline_alpha_osc or "30"
+local TIME_LABEL_SHADOW = theme.time_label_shadow_osc and 1 or 0
+local TIME_LABEL_SHADOW_X = theme.time_label_shadow_x_osc or 1
+local TIME_LABEL_SHADOW_Y = theme.time_label_shadow_y_osc or 1
+local TIME_LABEL_SHADOW_COLOR = common.bgr(theme.time_label_shadow_color_osc or "000000")
+local TIME_LABEL_SHADOW_ALPHA = theme.time_label_shadow_alpha_osc or "40"
+local VOLUME_SLIDER_WIDTH = theme.volume_slider_width_osc or 110
+local VOLUME_SLIDER_HEIGHT = theme.volume_slider_height_osc or 6
+local VOLUME_SLIDER_THUMB_WIDTH = theme.volume_slider_thumb_width_osc or 4
+local VOLUME_SLIDER_THUMB_HEIGHT = theme.volume_slider_thumb_height_osc or 12
+local VOLUME_SLIDER_RADIUS = theme.volume_slider_radius_osc or 3
+local VOLUME_SLIDER_COLOR = common.bgr(theme.volume_slider_color_osc or "FFFFFF")
+local VOLUME_SLIDER_TRACK_COLOR = common.bgr(theme.volume_slider_track_color_osc or "444444")
+local VOLUME_SLIDER_MUTE = theme.volume_slider_mute_osc ~= false
+local VOLUME_SLIDER_MUTE_WIDTH = theme.volume_slider_mute_width_osc or ICON_SIZE
+local VOLUME_SLIDER_MUTE_GAP = theme.volume_slider_mute_gap_osc or 8
+local VOLUME_SLIDER_PAD_LEFT = theme.volume_slider_pad_left_osc or 6
+local VOLUME_SLIDER_PAD_RIGHT = theme.volume_slider_pad_right_osc or 6
+local ICON_BG_ENABLED = theme.icon_bg_enabled_osc or false
+local ICON_BG_COLOR = common.bgr(theme.icon_bg_color_osc or theme.surface_color or "0D1117")
+local ICON_BG_ALPHA = theme.icon_bg_alpha_osc or "20"
+local ICON_BG_PAD_X = theme.icon_bg_pad_x_osc
+  or math.max(0, ((theme.icon_bg_width_osc or ICON_SIZE + 12) - ICON_SIZE) / 2)
+local ICON_BG_HEIGHT = theme.icon_bg_height_osc or theme.icon_bg_height or ICON_SIZE + 12
+local ICON_BG_RADIUS = theme.icon_bg_radius_osc or 0
+local ICON_BORDER_ENABLED = theme.icon_border_enabled_osc or false
+local ICON_BORDER_COLOR = common.bgr(theme.icon_border_color_osc or "FFFFFF")
+local ICON_BORDER_ALPHA = theme.icon_border_alpha_osc or "FF"
+local ICON_BORDER_WIDTH = theme.icon_border_width_osc or 1
+local ICON_GROUP_BG_ENABLED = theme.icon_group_bg_enabled_osc or false
+local ICON_GROUP_BG_COLOR = common.bgr(theme.icon_group_bg_color_osc or theme.surface_color or "0D1117")
+local ICON_GROUP_BG_ALPHA = theme.icon_group_bg_alpha_osc or "40"
+local ICON_GROUP_BG_PADDING = theme.icon_group_bg_padding_osc or 8
+local ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc or ICON_BG_HEIGHT + 16
+local ICON_GROUP_BG_RADIUS = theme.icon_group_bg_radius_osc or 0
+local ICON_GROUP_BORDER_ENABLED = theme.icon_group_border_enabled_osc or false
+local ICON_GROUP_BORDER_COLOR = common.bgr(theme.icon_group_border_color_osc or "FFFFFF")
+local ICON_GROUP_BORDER_ALPHA = theme.icon_group_border_alpha_osc or "FF"
+local ICON_GROUP_BORDER_WIDTH = theme.icon_group_border_width_osc or 1
 
 local CHAPTER_TOOLTIP_FONT = theme.font_chapter_tooltip or theme.font_text or "Inter"
 local CHAPTER_MARK_COLOR = common.bgr(theme.color_chapter_mark or theme.background_color or "0A0C10")
@@ -82,6 +137,8 @@ local ICON = {
   volume_off = "\238\129\143",  -- U+E04F
   add = "\238\133\133",         -- U+E145
   fullscreen = "\238\151\144",  -- U+E5D0
+  seek_back = "\238\129\153",   -- U+E059
+  seek_forward = "\238\129\150",-- U+E056
   playlist = "\238\129\159",    -- U+E05F
   add_file = "\238\137\141",    -- U+E24D
   add_folder = "\238\139\140",  -- U+E2CC
@@ -143,6 +200,7 @@ local volume = 100
 local volume_popup_open = false
 local add_menu_open = false
 local volume_dragging = false
+local volume_slider_dragging = false
 local seek_dragging = false
 local hitboxes = {}
 local popup_geo = nil
@@ -174,6 +232,175 @@ local function add_hitbox(name, x1, y1, x2, y2, cb) common.add_hitbox(hitboxes, 
 local function point_in(px, py, b) return common.point_in(px, py, b) end
 local function draw_icon(ass, glyph, cx, cy, size, color, alpha) common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha) end
 
+local function draw_time_label(ass, text, x, y, align)
+  ass:new_event()
+  ass:append(string.format(
+    "{\\pos(%d,%d)\\an%d\\fn%s\\fs%d\\1c&H%s&\\1a&H10&"
+      .. "\\3c&H%s&\\3a&H%s&\\bord%d\\shad%d\\xshad%d\\yshad%d"
+      .. "\\4c&H%s&\\4a&H%s&\\b0}%s",
+    x, y, align, UI_FONT, FONT_SIZE, TEXT,
+    TIME_LABEL_OUTLINE_COLOR, TIME_LABEL_OUTLINE_ALPHA, TIME_LABEL_OUTLINE_WIDTH,
+    TIME_LABEL_SHADOW, TIME_LABEL_SHADOW_X, TIME_LABEL_SHADOW_Y,
+    TIME_LABEL_SHADOW_COLOR, TIME_LABEL_SHADOW_ALPHA, text
+  ))
+end
+
+local function draw_volume_slider(ass, x, y)
+  local slider_width = VOLUME_SLIDER_WIDTH
+
+  local slider_x1
+
+  if VOLUME_SLIDER_MUTE then
+    local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+    local total_item_width = mute_width
+      + VOLUME_SLIDER_MUTE_GAP
+      + slider_width
+      + VOLUME_SLIDER_PAD_LEFT
+      + VOLUME_SLIDER_PAD_RIGHT
+
+    local mute_x = x - total_item_width / 2 + mute_width / 2 + VOLUME_SLIDER_PAD_LEFT
+
+    draw_icon(
+      ass,
+      muted and ICON.volume_off or ICON.volume_up,
+      mute_x,
+      y,
+      ICON_SIZE,
+      ICON_COLOR,
+      "00"
+    )
+
+    slider_x1 = x
+      + total_item_width / 2
+      - slider_width
+      - VOLUME_SLIDER_PAD_RIGHT
+  else
+    local total_item_width = slider_width
+      + VOLUME_SLIDER_PAD_LEFT
+      + VOLUME_SLIDER_PAD_RIGHT
+
+    slider_x1 = x
+      - total_item_width / 2
+      + VOLUME_SLIDER_PAD_LEFT
+  end
+
+  local slider_x2 = slider_x1 + slider_width
+
+  local track_y1 = y - VOLUME_SLIDER_HEIGHT / 2
+  local track_y2 = y + VOLUME_SLIDER_HEIGHT / 2
+
+  local ratio = math.min(1, math.max(0, volume / 100))
+  local thumb_x = slider_x1 + (slider_x2 - slider_x1) * ratio
+
+  common.draw_rrect(
+    ass,
+    slider_x1,
+    track_y1,
+    slider_x2,
+    track_y2,
+    VOLUME_SLIDER_RADIUS,
+    VOLUME_SLIDER_TRACK_COLOR,
+    "00"
+  )
+
+  if thumb_x > slider_x1 then
+    common.draw_rrect(
+      ass,
+      slider_x1,
+      track_y1,
+      thumb_x,
+      track_y2,
+      VOLUME_SLIDER_RADIUS,
+      VOLUME_SLIDER_COLOR,
+      "00"
+    )
+  end
+
+  common.draw_rrect(
+    ass,
+    thumb_x - VOLUME_SLIDER_THUMB_WIDTH,
+    y - VOLUME_SLIDER_THUMB_HEIGHT,
+    thumb_x + VOLUME_SLIDER_THUMB_WIDTH,
+    y + VOLUME_SLIDER_THUMB_HEIGHT,
+    VOLUME_SLIDER_THUMB_WIDTH,
+    VOLUME_SLIDER_COLOR,
+    "00"
+  )
+end
+
+local function draw_item_background(ass, cx, cy, content_w)
+  if not ICON_BG_ENABLED then return end
+  common.draw_rrect(
+    ass,
+    cx - (content_w / 2 + ICON_BG_PAD_X),
+    cy - ICON_BG_HEIGHT / 2,
+    cx + (content_w / 2 + ICON_BG_PAD_X),
+    cy + ICON_BG_HEIGHT / 2,
+    ICON_BG_RADIUS,
+    ICON_BG_COLOR,
+    ICON_BG_ALPHA
+  )
+end
+
+local function draw_rrect_outline(ass, x1, y1, x2, y2, radius, color, alpha, width)
+  if not width or width <= 0 or alpha == "FF" then return end
+  ass:new_event()
+  ass:append(string.format(
+    "{\\pos(0,0)\\an7\\1a&HFF&\\3c&H%s&\\3a&H%s&\\bord%d\\shad0}",
+    color, alpha, width
+  ))
+  ass:draw_start()
+  ass:round_rect_cw(x1, y1, x2, y2, radius)
+  ass:draw_stop()
+end
+
+local function draw_item_border(ass, cx, cy, content_w)
+  if not ICON_BORDER_ENABLED then return end
+  local x1 = cx - (content_w / 2 + ICON_BG_PAD_X)
+  local x2 = cx + (content_w / 2 + ICON_BG_PAD_X)
+  local y1 = cy - ICON_BG_HEIGHT / 2
+  local y2 = cy + ICON_BG_HEIGHT / 2
+  draw_rrect_outline(
+    ass,
+    x1,
+    y1,
+    x2,
+    y2,
+    ICON_BG_RADIUS,
+    ICON_BORDER_COLOR,
+    ICON_BORDER_ALPHA,
+    ICON_BORDER_WIDTH
+  )
+end
+
+local function draw_icon_group_background(ass, buttons, row_y)
+  if not ICON_GROUP_BG_ENABLED or #buttons == 0 then return end
+  local x1 = math.huge
+  local x2 = -math.huge
+  for _, button in ipairs(buttons) do
+    x1 = math.min(x1, button.x - button.width / 2 - ICON_BG_PAD_X)
+    x2 = math.max(x2, button.x + button.width / 2 + ICON_BG_PAD_X)
+  end
+  x1 = x1 - ICON_GROUP_BG_PADDING
+  x2 = x2 + ICON_GROUP_BG_PADDING
+  local y1 = row_y - ICON_GROUP_BG_HEIGHT / 2
+  local y2 = row_y + ICON_GROUP_BG_HEIGHT / 2
+  common.draw_rrect(ass, x1, y1, x2, y2, ICON_GROUP_BG_RADIUS, ICON_GROUP_BG_COLOR, ICON_GROUP_BG_ALPHA)
+  if ICON_GROUP_BORDER_ENABLED then
+    draw_rrect_outline(
+      ass,
+      x1,
+      y1,
+      x2,
+      y2,
+      ICON_GROUP_BG_RADIUS,
+      ICON_GROUP_BORDER_COLOR,
+      ICON_GROUP_BORDER_ALPHA,
+      ICON_GROUP_BORDER_WIDTH
+    )
+  end
+end
+
 local function playlist_script_loaded()
   return common.is_script_loaded("cadre_playlist")
 end
@@ -185,6 +412,168 @@ local function run_playlist_action(action, fallback)
     mp.command(fallback)
   end
 end
+
+local DEFAULT_BUTTON_LAYOUT = {
+  left = { "prev", "play", "next", "stop" },
+  center = {},
+  right = { "volume", "add", "fullscreen", "playlist" },
+}
+
+local function configured_button_layout()
+  local layout = { left = {}, center = {}, right = {} }
+  local configured = false
+  local has_named_button = false
+
+  for _, group in ipairs({
+    { name = "left", prefix = "L" },
+    { name = "center", prefix = "C" },
+    { name = "right", prefix = "R" },
+  }) do
+    for i = 1, 6 do
+      local value = theme["osc_" .. group.prefix .. i]
+      if value ~= nil then configured = true end
+      if type(value) == "string" and value ~= "" then
+        has_named_button = true
+        layout[group.name][#layout[group.name] + 1] = value
+      end
+    end
+  end
+
+  if not configured then
+    return DEFAULT_BUTTON_LAYOUT, true
+  end
+  return layout, has_named_button
+end
+
+local function get_volume_slider_geometry(button)
+  local slider_x1
+
+  if VOLUME_SLIDER_MUTE then
+    local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+    local total_item_width = mute_width
+      + VOLUME_SLIDER_MUTE_GAP
+      + VOLUME_SLIDER_WIDTH
+      + VOLUME_SLIDER_PAD_LEFT
+      + VOLUME_SLIDER_PAD_RIGHT
+
+    slider_x1 = button.x
+      + total_item_width / 2
+      - VOLUME_SLIDER_WIDTH
+      - VOLUME_SLIDER_PAD_RIGHT
+  else
+    local total_item_width = VOLUME_SLIDER_WIDTH
+      + VOLUME_SLIDER_PAD_LEFT
+      + VOLUME_SLIDER_PAD_RIGHT
+
+    slider_x1 = button.x
+      - total_item_width / 2
+      + VOLUME_SLIDER_PAD_LEFT
+  end
+
+  return {
+    slider_x1 = slider_x1,
+    slider_x2 = slider_x1 + VOLUME_SLIDER_WIDTH,
+  }
+end
+
+local function set_volume_from_y(py, geo)
+  local r = (geo.track_y2 - py) / (geo.track_y2 - geo.track_y1)
+  mp.set_property_number("volume", math.min(1, math.max(0, r)) * 100)
+end
+
+local function set_volume_from_x(px, button)
+  if not px or not button then return end
+
+  local geo = get_volume_slider_geometry(button)
+  local slider_w = geo.slider_x2 - geo.slider_x1
+
+  local ratio = (px - geo.slider_x1) / slider_w
+  ratio = math.min(1, math.max(0, ratio))
+
+  mp.set_property_number("volume", ratio * 100)
+end
+
+local BUTTONS = {
+  prev = {
+    icon = ICON.prev,
+    click = function() run_playlist_action("playlist-prev", "playlist-prev") end,
+  },
+  seek_back = {
+    icon = ICON.seek_back,
+    click = function() mp.commandv("seek", -10, "relative") end,
+  },
+  play = {
+    icon = function() return paused and ICON.play or ICON.pause end,
+    click = function() mp.commandv("cycle", "pause") end,
+  },
+  pause = {
+    icon = ICON.pause,
+    click = function() mp.set_property_bool("pause", true) end,
+  },
+  seek_forward = {
+    icon = ICON.seek_forward,
+    click = function() mp.commandv("seek", 10, "relative") end,
+  },
+  next = {
+    icon = ICON.next,
+    click = function() run_playlist_action("playlist-next", "playlist-next") end,
+  },
+  stop = {
+    icon = ICON.stop,
+    click = function() mp.commandv("stop", "keep-playlist") end,
+  },
+  volume = {
+    icon = function()
+    return (muted or volume == 0) and ICON.volume_off or ICON.volume_up
+    end,
+
+    click = function()
+    volume_popup_open = not volume_popup_open
+    add_menu_open = false
+    end,
+  },
+  volume_slider = {
+    kind = "volume_slider",
+
+    click = function(px, py, button)
+    if not button then return end
+
+    volume_slider_dragging = true
+    set_volume_from_x(px, button)
+    end,
+  },
+  mute = {
+    icon = function()
+    return muted and ICON.volume_off or ICON.volume_up
+    end,
+
+    click = function()
+    mp.commandv("cycle", "mute")
+    end,
+  },
+  add = {
+    icon = ICON.add,
+    click = function()
+      add_menu_open = not add_menu_open
+      volume_popup_open = false
+    end,
+  },
+  fullscreen = {
+    icon = ICON.fullscreen,
+    click = function() mp.commandv("cycle", "fullscreen") end,
+  },
+  playlist = {
+    icon = ICON.playlist,
+    alpha = function()
+      return mp.get_property_native("user-data/cadre_playlist/visible", false) and "00" or "60"
+    end,
+    click = function() run_playlist_action("toggle-playlist", "show-text ${playlist}") end,
+  },
+  time = {
+    kind = "time",
+    click = function() end,
+  },
+}
 
 local function normalize_chapters(raw)
     local out = {}
@@ -234,6 +623,36 @@ local function find_hovered_chapter(bar_x1, bar_w, dur, px)
     return nil
 end
 
+local function button_dimensions(id)
+  if id == "time" then
+    return TIME_ITEM_WIDTH, FONT_SIZE
+  end
+
+  if id == "volume_slider" then
+  local width = VOLUME_SLIDER_WIDTH
+    + VOLUME_SLIDER_PAD_LEFT
+    + VOLUME_SLIDER_PAD_RIGHT
+
+  if VOLUME_SLIDER_MUTE then
+    width = VOLUME_SLIDER_MUTE_WIDTH
+      + VOLUME_SLIDER_MUTE_GAP
+      + VOLUME_SLIDER_WIDTH
+      + VOLUME_SLIDER_PAD_LEFT
+      + VOLUME_SLIDER_PAD_RIGHT
+  end
+
+  local height = math.max(
+    VOLUME_SLIDER_HEIGHT,
+      VOLUME_SLIDER_THUMB_HEIGHT,
+      ICON_SIZE
+    )
+
+    return width, height
+  end
+
+  return ICON_SIZE, ICON_SIZE
+end
+
 --------------------------------------------------------------------------------
 -- LAYOUT
 --------------------------------------------------------------------------------
@@ -254,36 +673,90 @@ local function get_layout()
     pill_x2 = natural_x2
   end
 
-  local pill_y2 = screen_h - BAR_BOTTOM_INSET
-  local pill_y1 = pill_y2 - BAR_HEIGHT
+  local pill_y1, pill_y2
+  if BAR_Y_ANCHOR == "top" then
+    pill_y1 = BAR_TOP_INSET
+    pill_y2 = pill_y1 + BAR_HEIGHT
+  elseif BAR_Y_ANCHOR == "center" then
+    pill_y1 = (screen_h - BAR_HEIGHT) / 2
+    pill_y2 = pill_y1 + BAR_HEIGHT
+  else
+    pill_y2 = screen_h - BAR_BOTTOM_INSET
+    pill_y1 = pill_y2 - BAR_HEIGHT
+  end
 
   local seek_y = pill_y1 + SEEK_Y_OFFSET
-  local row_y = pill_y1 + ICON_ROW_OFFSET
+  local row_y = BUTTON_Y_ANCHOR == "bottom"
+    and pill_y2 - BUTTON_ROW_OFFSET
+    or pill_y1 + BUTTON_ROW_OFFSET
   local spacing = ICON_SPACING
 
-  local bar_x1, bar_x2 = pill_x1 + SIDE_MARGIN, pill_x2 - SIDE_MARGIN
-  local icon_half = ICON_SIZE / 2
+  local seek_x1, seek_x2 = pill_x1 + SEEK_SIDE_INSET, pill_x2 - SEEK_SIDE_INSET
+  local button_x1, button_x2 = pill_x1 + BUTTON_LEFT_INSET, pill_x2 - BUTTON_RIGHT_INSET
 
-  local x = bar_x1 + icon_half
-  local prev_x = x; x = x + spacing
-  local play_x = x; x = x + spacing
-  local next_x = x; x = x + spacing
-  local stop_x = x; x = x + spacing
-  local time_x = x + 16
+  local button_layout, has_named_button = configured_button_layout()
+  local positions = { left = {}, center = {}, right = {}, by_id = {} }
 
-  local rx = bar_x2 - icon_half
-  local playlist_x = rx; rx = rx - spacing
-  local fullscreen_x = rx; rx = rx - spacing
-  local add_x = rx; rx = rx - spacing
-  local volume_x = rx
+  local function valid_group_buttons(group)
+    local valid = {}
+    for _, id in ipairs(button_layout[group]) do
+      if BUTTONS[id] then
+        valid[#valid + 1] = id
+      else
+        msg.warn("cadre_osc: unknown button '" .. id .. "' in " .. group .. " layout")
+      end
+    end
+    return valid
+  end
+
+  local function place_group(group, first_edge, direction)
+    local ids = valid_group_buttons(group)
+    local cursor = first_edge
+    local gap = math.max(0, spacing - ICON_SIZE)
+    for index = 1, #ids do
+      local id = direction < 0 and ids[#ids - index + 1] or ids[index]
+      local width, height = button_dimensions(id)
+      local x = direction > 0 and cursor + width / 2 or cursor - width / 2
+      local button = { id = id, x = x, width = width, height = height }
+      positions[group][#positions[group] + 1] = button
+      positions.by_id[id] = button.x
+      if direction > 0 then
+        cursor = cursor + width + gap
+      else
+        cursor = cursor - width - gap
+      end
+    end
+  end
+
+  local function place_all_groups()
+    place_group("left", button_x1, 1)
+    place_group("right", button_x2, -1)
+
+    local center_ids = valid_group_buttons("center")
+    local center_width = 0
+    local center_gap = math.max(0, spacing - ICON_SIZE)
+    for _, id in ipairs(center_ids) do
+      local width = button_dimensions(id)
+      center_width = center_width + width
+    end
+    center_width = center_width + math.max(0, #center_ids - 1) * center_gap
+    place_group("center", screen_w / 2 - center_width / 2, 1)
+  end
+
+  place_all_groups()
+  if has_named_button and #positions.left == 0 and #positions.center == 0 and #positions.right == 0 then
+    msg.warn("cadre_osc: no valid configured buttons; using default layout")
+    button_layout = DEFAULT_BUTTON_LAYOUT
+    positions = { left = {}, center = {}, right = {}, by_id = {} }
+    place_all_groups()
+  end
 
   return {
     pill_x1 = pill_x1, pill_x2 = pill_x2, pill_y1 = pill_y1, pill_y2 = pill_y2,
-    bar_x1 = bar_x1, bar_x2 = bar_x2,
+    seek_x1 = seek_x1, seek_x2 = seek_x2,
+    button_x1 = button_x1, button_x2 = button_x2,
     seek_y = seek_y, row_y = row_y,
-    prev_x = prev_x, play_x = play_x, next_x = next_x, stop_x = stop_x, time_x = time_x,
-    volume_x = volume_x, add_x = add_x,
-    fullscreen_x = fullscreen_x, playlist_x = playlist_x,
+    buttons = positions,
   }
 end
 
@@ -292,18 +765,21 @@ end
 --------------------------------------------------------------------------------
 
 local function compute_popup_geo(L)
-  local card_w, card_h = 44, 130
-  local cx = L.volume_x
+  local card_w, card_h = 44, 158
+  local cx = L.buttons.by_id.volume
+  if not cx then return nil end
   local card_x1, card_x2 = cx - card_w / 2, cx + card_w / 2
   local card_y2 = L.pill_y1 - 10
   local card_y1 = card_y2 - card_h
-  local track_y1, track_y2 = card_y1 + 18, card_y2 - 28
-  return { cx = cx, card_x1 = card_x1, card_x2 = card_x2, card_y1 = card_y1, card_y2 = card_y2, track_y1 = track_y1, track_y2 = track_y2 }
-end
-
-local function set_volume_from_y(py, geo)
-  local r = (geo.track_y2 - py) / (geo.track_y2 - geo.track_y1)
-  mp.set_property_number("volume", math.min(1, math.max(0, r)) * 100)
+  local track_y1, track_y2 = card_y1 + 18, card_y2 - 54
+  local mute_y = card_y2 - 18
+  return {
+    cx = cx,
+    card_x1 = card_x1, card_x2 = card_x2,
+    card_y1 = card_y1, card_y2 = card_y2,
+    track_y1 = track_y1, track_y2 = track_y2,
+    mute_y = mute_y,
+  }
 end
 
 local function render_volume_popup(ass, geo)
@@ -326,7 +802,13 @@ local function render_volume_popup(ass, geo)
   ass:round_rect_cw(geo.cx - 6, fill_y1 - 6, geo.cx + 6, fill_y1 + 6, 6)
   ass:draw_stop()
 
-  common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 10, FONT_SIZE, TEXT, "10", 2, false)
+  common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 38, FONT_SIZE, TEXT, "10", 2, false)
+
+  draw_icon(ass, muted and ICON.volume_off or ICON.volume_up, geo.cx, geo.mute_y, 18, ICON_COLOR, muted and "00" or "40")
+
+  add_hitbox("volume_mute", geo.cx - 16, geo.mute_y - 14, geo.cx + 16, geo.mute_y + 14, function()
+    mp.commandv("cycle", "mute")
+  end)
 
   add_hitbox("volume_track", geo.cx - 14, geo.track_y1 - 12, geo.cx + 14, geo.track_y2 + 12, function(px, py)
     volume_dragging = true
@@ -341,7 +823,8 @@ end
 
 local function compute_add_menu_geo(L)
   local card_w, card_h = 190, 3 * 36 + 12
-  local cx = L.add_x
+  local cx = L.buttons.by_id.add
+  if not cx then return nil end
   local card_x1, card_x2 = cx - card_w / 2, cx + card_w / 2
   local card_y2 = L.pill_y1 - 10
   local card_y1 = card_y2 - card_h
@@ -398,9 +881,9 @@ local function render()
   ass:round_rect_cw(L.pill_x1, L.pill_y1, L.pill_x2, L.pill_y2, BAR_RADIUS)
   ass:draw_stop()
 
-  local hovering_seek = (mouse_y >= L.seek_y - 8 and mouse_y <= L.seek_y + 8 and mouse_x >= L.pill_x1 + SIDE_MARGIN and mouse_x <= L.pill_x2 - SIDE_MARGIN)
+  local hovering_seek = (mouse_y >= L.seek_y - 8 and mouse_y <= L.seek_y + 8 and mouse_x >= L.seek_x1 and mouse_x <= L.seek_x2)
   local track_h = hovering_seek and SEEK_HEIGHT_HOVER or SEEK_HEIGHT_NORMAL
-  local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
+  local bar_x1, bar_x2 = L.seek_x1, L.seek_x2
   local bar_w = bar_x2 - bar_x1
 
   common.draw_rrect(ass, bar_x1, L.seek_y - track_h / 2, bar_x2, L.seek_y + track_h / 2, track_h / 2, TRACK_BG, "00")
@@ -413,7 +896,30 @@ local function render()
 
   draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, L.seek_y, track_h, duration)
 
+  draw_rrect_outline(
+    ass,
+    bar_x1,
+    L.seek_y - track_h / 2,
+    bar_x2,
+    L.seek_y + track_h / 2,
+    track_h / 2,
+    SEEK_BORDER_COLOR,
+    SEEK_BORDER_ALPHA,
+    SEEK_BORDER_WIDTH
+  )
+
   common.draw_rrect(ass, filled_x - THUMB_W, L.seek_y - THUMB_H, filled_x + THUMB_W, L.seek_y + THUMB_H, THUMB_RADIUS, THUMB_COLOR, "00")
+  draw_rrect_outline(
+    ass,
+    filled_x - THUMB_W,
+    L.seek_y - THUMB_H,
+    filled_x + THUMB_W,
+    L.seek_y + THUMB_H,
+    THUMB_RADIUS,
+    THUMB_BORDER_COLOR,
+    THUMB_BORDER_ALPHA,
+    THUMB_BORDER_WIDTH
+  )
 
   local measure_osd = mp.create_osd_overlay("ass-events")
   measure_osd.hidden = true
@@ -509,65 +1015,97 @@ local function render()
   end)
 
   local dim = ICON_DIM_A
+  for _, group in ipairs({ "left", "center", "right" }) do
+    draw_icon_group_background(ass, L.buttons[group], L.row_y)
+    for _, button in ipairs(L.buttons[group]) do
+      local definition = BUTTONS[button.id]
+      draw_item_background(ass, button.x, L.row_y, button.width)
+      draw_item_border(ass, button.x, L.row_y, button.width)
 
-  draw_icon(ass, ICON.prev, L.prev_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("prev", L.prev_x - 16, L.row_y - 16, L.prev_x + 16, L.row_y + 16, function()
-    run_playlist_action("playlist-prev", "playlist-prev")
-  end)
+      if definition.kind == "time" then
+        draw_time_label(
+          ass,
+          fmt_time(position) .. " / " .. fmt_time(duration),
+          button.x,
+          L.row_y,
+          5
+        )
 
-  draw_icon(ass, paused and ICON.play or ICON.pause, L.play_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("playpause", L.play_x - 16, L.row_y - 16, L.play_x + 16, L.row_y + 16, function()
-    mp.commandv("cycle", "pause")
-  end)
+        elseif definition.kind == "volume_slider" then
+          draw_volume_slider(ass, button.x, L.row_y)
 
-  draw_icon(ass, ICON.next, L.next_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("next", L.next_x - 16, L.row_y - 16, L.next_x + 16, L.row_y + 16, function()
-    run_playlist_action("playlist-next", "playlist-next")
-  end)
+        else
+          local glyph = type(definition.icon) == "function" and definition.icon() or definition.icon
+          local alpha = definition.alpha and definition.alpha() or dim
+          draw_icon(ass, glyph, button.x, L.row_y, ICON_SIZE, ICON_COLOR, alpha)
+        end
 
-  draw_icon(ass, ICON.stop, L.stop_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("stop", L.stop_x - 16, L.row_y - 16, L.stop_x + 16, L.row_y + 16, function()
-    mp.commandv("stop", "keep-playlist")
-  end)
+      local item_pad_x = ICON_BG_ENABLED and ICON_BG_PAD_X or 0
+      local hitbox_half_w = math.max(16, button.width / 2 + item_pad_x)
+      local hitbox_half_h = math.max(16, ICON_BG_ENABLED and ICON_BG_HEIGHT / 2 or button.height / 2)
+
+      if definition.kind == "volume_slider" and VOLUME_SLIDER_MUTE then
+        local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+        local total_item_width = button.width
+        local mute_x = button.x - total_item_width / 2 + mute_width / 2
+
+        add_hitbox(
+          "button_volume_slider_mute",
+          mute_x - mute_width / 2,
+          L.row_y - hitbox_half_h,
+          mute_x + mute_width / 2,
+          L.row_y + hitbox_half_h,
+          function()
+            mp.commandv("cycle", "mute")
+          end
+        )
+
+        local geo = get_volume_slider_geometry(button)
+
+        add_hitbox(
+          "button_volume_slider_track",
+          geo.slider_x1 - VOLUME_SLIDER_THUMB_WIDTH - 4,
+          L.row_y - hitbox_half_h,
+          geo.slider_x2 + VOLUME_SLIDER_THUMB_WIDTH + 4,
+          L.row_y + hitbox_half_h,
+          function(px, py)
+            definition.click(px, py, button)
+          end
+        )
+      else
+        add_hitbox(
+          "button_" .. button.id,
+          button.x - hitbox_half_w,
+          L.row_y - hitbox_half_h,
+          button.x + hitbox_half_w,
+          L.row_y + hitbox_half_h,
+          function(px, py)
+            definition.click(px, py, button)
+          end
+        )
+      end
+    end
+  end
 
   local time_label_y = L.seek_y + TIME_LABEL_OFFSET_Y + 3
-  common.draw_text(ass, fmt_time(position), bar_x1, time_label_y, FONT_SIZE, TEXT, "10", 4, false)
-  common.draw_text(ass, fmt_time(duration), bar_x2, time_label_y, FONT_SIZE, TEXT, "10", 6, false)
+  if not L.buttons.by_id.time then
+    draw_time_label(ass, fmt_time(position), bar_x1, time_label_y, 4)
+    draw_time_label(ass, fmt_time(duration), bar_x2, time_label_y, 6)
+  end
 
-  draw_icon(ass, (muted or volume == 0) and ICON.volume_off or ICON.volume_up, L.volume_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("volume", L.volume_x - 16, L.row_y - 16, L.volume_x + 16, L.row_y + 16, function()
-    volume_popup_open = not volume_popup_open
-    add_menu_open = false
-  end)
-
-  draw_icon(ass, ICON.add, L.add_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("add", L.add_x - 16, L.row_y - 16, L.add_x + 16, L.row_y + 16, function()
-    add_menu_open = not add_menu_open
-    volume_popup_open = false
-  end)
-
-  draw_icon(ass, ICON.fullscreen, L.fullscreen_x, L.row_y, ICON_SIZE, ICON_COLOR, dim)
-  add_hitbox("fullscreen", L.fullscreen_x - 16, L.row_y - 16, L.fullscreen_x + 16, L.row_y + 16, function()
-    mp.commandv("cycle", "fullscreen")
-  end)
-
-  local pl_visible = mp.get_property_native("user-data/cadre_playlist/visible", false)
-  draw_icon(ass, ICON.playlist, L.playlist_x, L.row_y, ICON_SIZE, ICON_COLOR, pl_visible and "00" or "60")
-  add_hitbox("playlist", L.playlist_x - 16, L.row_y - 16, L.playlist_x + 16, L.row_y + 16, function()
-    run_playlist_action("toggle-playlist", "show-text ${playlist}")
-  end)
-
-  if volume_popup_open then
+  if volume_popup_open and L.buttons.by_id.volume then
     popup_geo = compute_popup_geo(L)
     render_volume_popup(ass, popup_geo)
   else
+    volume_popup_open = false
     popup_geo = nil
   end
 
-  if add_menu_open then
+  if add_menu_open and L.buttons.by_id.add then
     add_menu_geo = compute_add_menu_geo(L)
     render_add_menu(ass, add_menu_geo)
   else
+    add_menu_open = false
     add_menu_geo = nil
   end
 
@@ -582,7 +1120,7 @@ end
 --------------------------------------------------------------------------------
 
 local function mouse_in_active_zone()
-  if volume_dragging then return true end
+  if volume_dragging or volume_slider_dragging then return true end
   local L = get_layout()
   if mouse_y >= L.pill_y1 - 20 and mouse_x >= L.pill_x1 - 20 and mouse_x <= L.pill_x2 + 20 then
     return true
@@ -602,7 +1140,7 @@ local function restart_hide_timer()
   if hide_timer then hide_timer:kill() end
   if not file_loaded then return end
   hide_timer = mp.add_timeout(AUTOHIDE_SEC, function()
-    if volume_dragging or mouse_in_active_zone() then
+    if volume_dragging or volume_slider_dragging or mouse_in_active_zone() then
       restart_hide_timer()
     else
       bar_visible = false
@@ -621,9 +1159,30 @@ local function show_bar()
   restart_hide_timer()
 end
 
+local function toggle_bar()
+  if bar_visible then
+    if hide_timer then hide_timer:kill() end
+    bar_visible = false
+    volume_popup_open = false
+    add_menu_open = false
+    render()
+  else
+    show_bar()
+  end
+end
+
+mp.register_script_message("cadre-osc-toggle", toggle_bar)
+mp.register_script_message("open-file-dialog", common.do_add_file)
+mp.register_script_message("open-folder-dialog", common.do_add_folder)
+mp.register_script_message("open-url-dialog", common.do_add_url)
+mp.add_key_binding(nil, "cadre_osc_toggle", toggle_bar)
+mp.add_key_binding(nil, "open-file-dialog", common.do_add_file)
+mp.add_key_binding(nil, "open-folder-dialog", common.do_add_folder)
+mp.add_key_binding(nil, "open-url-dialog", common.do_add_url)
+
 local function update_thumbnail_preview()
   local L = get_layout()
-  local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
+  local bar_x1, bar_x2 = L.seek_x1, L.seek_x2
   local hovering_seek = (mouse_y >= L.seek_y - 10 and mouse_y <= L.seek_y + 10
     and mouse_x >= bar_x1 and mouse_x <= bar_x2)
 
@@ -691,11 +1250,35 @@ local function on_mouse_move()
     set_volume_from_y(clamped_y, popup_geo)
     render()
     return
+    end
+
+  if volume_slider_dragging then
+    local slider_button = nil
+    local current_layout = get_layout()
+
+    for _, group in ipairs({ "left", "center", "right" }) do
+      for _, button in ipairs(current_layout.buttons[group]) do
+        if button.id == "volume_slider" then
+          slider_button = button
+          break
+        end
+      end
+
+      if slider_button then
+        break
+      end
+    end
+
+    if slider_button then
+      set_volume_from_x(mouse_x, slider_button)
+      render()
+      return
+    end
   end
 
   if seek_dragging then
     local L = get_layout()
-    local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
+    local bar_x1, bar_x2 = L.seek_x1, L.seek_x2
     local bar_w = bar_x2 - bar_x1
     if duration and duration > 0 then
       local r = (mouse_x - bar_x1) / bar_w
@@ -715,7 +1298,7 @@ local function on_mouse_move()
 
   local function update_hovered_chapter()
     local L = get_layout()
-    local bar_x1, bar_x2 = L.pill_x1 + SIDE_MARGIN, L.pill_x2 - SIDE_MARGIN
+    local bar_x1, bar_x2 = L.seek_x1, L.seek_x2
     local hovering_seek = (mouse_y >= L.seek_y - 10 and mouse_y <= L.seek_y + 10
         and mouse_x >= bar_x1 and mouse_x <= bar_x2)
 
@@ -732,16 +1315,16 @@ end
 
 update_hovered_chapter()
   local hovering_hitbox = false
-  for _, b in ipairs(hitboxes) do
-    if point_in(mouse_x, mouse_y, b) then hovering_hitbox = true break end
-  end
-  mp.commandv("script-message", "python-bridge", "osc-hover", tostring(hovering_hitbox))
+    for _, b in ipairs(hitboxes) do
+      if point_in(mouse_x, mouse_y, b) then hovering_hitbox = true break end
+    end
+    mp.commandv("script-message", "python-bridge", "osc-hover", tostring(hovering_hitbox))
 
-  if mouse_in_active_zone() then
-    show_bar()
-  elseif bar_visible then
-    render()
-  end
+    if mouse_in_active_zone() then
+      show_bar()
+    elseif bar_visible then
+      render()
+    end
 end
 
 local function on_mbtn_left(event)
@@ -777,7 +1360,8 @@ local function on_mbtn_left(event)
               and mouse_y >= popup_geo.card_y1 and mouse_y <= popup_geo.card_y2
           if in_popup then
               for _, b in ipairs(hitboxes) do
-                  if (b.name == "volume_track" or b.name == "volume_card_bg") and point_in(mouse_x, mouse_y, b) then
+                  if (b.name == "volume_track" or b.name == "volume_mute" or b.name == "volume_card_bg")
+                    and point_in(mouse_x, mouse_y, b) then
                       b.cb(mouse_x, mouse_y)
                       render()
                       return
@@ -809,21 +1393,25 @@ local function on_mbtn_left(event)
       end
 
       for _, b in ipairs(hitboxes) do
-          if point_in(mouse_x, mouse_y, b) then
-              if b.name == "seekbar" or b.name == "volume_track" then
-                  b.cb(mouse_x, mouse_y)
-              else
-                  b.cb()
-              end
-              render()
-              return
+        if point_in(mouse_x, mouse_y, b) then
+          if b.name == "seekbar"
+            or b.name == "volume_track"
+            or b.name == "button_volume_slider_track" then
+            b.cb(mouse_x, mouse_y)
+          else
+            b.cb()
           end
+
+          render()
+          return
+        end
       end
 
   elseif event.event == "up" or event.event == "release" then
       mp.commandv("script-message-to", "cadre_playlist", "playlist-mbtn-left-up", event.key_name or "")
       mp.commandv("script-message-to", "cadre_titlebar", "titlebar-mbtn-left-up")
       volume_dragging = false
+      volume_slider_dragging = false
       seek_dragging = false
   end
 end
