@@ -28,7 +28,7 @@ local M = {}
 
 M.theme_name = "Default Theme"
 M.theme_author = "Lunedor"
-M.theme_variant = "GnomeLibadwaita" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
+M.theme_variant = "Default" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
 
 ----------------------------------------------------------
 -- 1. CORE PALETTE (Global Base)
