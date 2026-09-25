@@ -51,6 +51,11 @@ The components detect one another when present and coordinate mouse input, windo
 - Volume flyout with a vertical volume slider.
 - Add-file, add-folder, and add-URL menus using native platform dialogs.
 - Previous, play/pause, next, stop, fullscreen, and playlist controls.
+- Theme-configurable button slots for left, center, and right groups.
+- Optional 10-second seek buttons and YouTube-style `time` display item.
+- Independent seekbar/button insets and top/bottom button-row anchoring.
+- Optional icon backgrounds, icon borders, group capsules, and group borders.
+- Optional seekbar and thumb borders.
 - Chapter markers on the seekbar.
 - Chapter-name tooltips when hovering chapter markers.
 - YouTube chapter loading for YouTube URLs and streams when `yt-dlp` is available.
@@ -68,6 +73,8 @@ The components detect one another when present and coordinate mouse input, windo
 - Repeat modes: off, repeat playlist, and repeat current item.
 - Save and load M3U/M3U8 playlists.
 - Per-item duration display when mpv has reported the duration.
+- Configurable row hover, selected, current-item, index, title, and duration styling.
+- Configurable row spacing, radius, padding, and toolbar/icon sizing.
 
 ### Cadre Titlebar
 
@@ -144,6 +151,9 @@ A typical portable layout looks like this:
 ```text
 mpv/
 ├─ mpv.conf
+├─ script-opts/
+│  └─ cadre-themes/
+│     └─ MacOSish.lua
 └─ scripts/
    ├─ cadre_common.lua
    ├─ cadre_theme.lua
@@ -176,22 +186,54 @@ Edit `cadre_theme.lua` to customize the active UI. Settings include:
 - Transparency values.
 - Fonts and font sizes.
 - OSC bar width, height, margins, radius, seekbar position, and control spacing.
-- Playlist panel width, row height, insets, toolbar, search field, and scrollbar.
+- OSC whole-panel vertical anchoring with `bottom`, `top`, or `center` placement.
+- OSC button order through numbered `L1`-`L6`, `C1`-`C6`, and `R1`-`R6` slots.
+- OSC button group alignment, item backgrounds, borders, duration labels, and seekbar styling.
+- Playlist panel width, row height, insets, hover/current/selection styling, toolbar, search field, and scrollbar.
 - Titlebar height, button width, button side, and startup visibility.
 - Chapter marker and tooltip appearance.
 
-### Sample themes
+### External themes
 
-The repository may include a `theme` folder containing sample theme files. Those files are examples, not files that Cadre loads automatically.
+Cadre can load a standalone theme file from `script-opts/cadre-themes`. Set the variant in `cadre_theme.lua`:
 
-To try a sample theme:
+```lua
+M.theme_variant = "MacOSish.lua"
+```
 
-1. Open the sample theme file from the `theme` folder.
-2. Copy its contents.
-3. Paste the contents into your active `cadre_theme.lua`, replacing the current theme configuration.
-4. Restart mpv.
+The `.lua` extension is optional. Explicit relative paths are also accepted:
 
-Keep one active `cadre_theme.lua` in the mpv `scripts` directory. Do not rename the active file unless you also update every Cadre script that loads it.
+```lua
+M.theme_variant = "script-opts/cadre-themes/MacOSish.lua"
+```
+
+An external theme must return a Lua table. You can use the same `local M = {}` pattern as `cadre_theme.lua`:
+
+```lua
+local M = {}
+
+M.theme_name = "MacOSish"
+M.bar_height_osc = 90
+M.icon_spacing = 44
+M.accent_color = "232323"
+M.color_track_fg_osc = "5AC8FA"
+
+return M
+```
+
+Theme keys are flat names such as `M.accent_color`; nested assignments such as `M.accent.color` are not part of the current theme API. Color values must be quoted six-character hexadecimal strings.
+
+When a named external theme loads, it replaces the base theme rather than merging with it. Settings omitted from the external file use the scripts' built-in fallbacks, so customized values from the base file do not leak into the selected theme. The base `cadre_theme.lua` is used when `theme_variant` is `"default"` or the selected file cannot be found.
+
+Supported lookup locations are:
+
+```text
+script-opts/cadre-themes/<name>.lua
+script-opt/cadre-themes/<name>.lua
+scripts/cadre-themes/<name>.lua
+```
+
+Restart mpv after changing the active theme.
 
 ## Playlist Shuffle Shortcuts
 
@@ -209,6 +251,20 @@ PGUP       script-message playlist-prev
 You can use different keys; the important part is sending `script-message playlist-next` and `script-message playlist-prev` while `cadre_playlist.lua` is loaded.
 
 The OSC automatically sends these messages to the playlist component when it is installed. Without the playlist component, the OSC falls back to mpv's normal previous/next commands.
+
+## Input Configuration
+
+Add these bindings to `input.conf`:
+
+```text
+o              script-message cadre-osc-toggle
+p              script-message toggle-playlist
+Ctrl+o         script-message open-file-dialog
+Ctrl+Shift+o   script-message open-folder-dialog
+Ctrl+l         script-message open-url-dialog
+```
+
+The file, folder, and URL commands open Cadre's native dialogs. They require `cadre_osc.lua` to be loaded.
 
 ## Default Controls
 
