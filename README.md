@@ -1,14 +1,20 @@
 # Cadre UI for mpv
 
-![Cadre Player Lite Screen](screenshots/Default.png)
-
-![Cadre Player MacOsish Theme](screenshots/MacOsish.png)
-
-![Cadre Player Glassy & Pill Theme](screenshots/PillGlassy.png)
-
-![Cadre Player Terminal Theme](screenshots/Terminal.png)
-
-![CHapter Tooltips](screenshots/ChapterTooltip.png)
+| Theme | Preview |
+| --- | --- |
+| **Default** | ![Default](screenshots/Default.png "Default") |
+| **MacOsish** | ![MacOsish](screenshots/MacOsish.png "MacOsish") |
+| **PillGlassy** | ![PillGlassy](screenshots/PillGlassy.png "PillGlassy") |
+| **Terminal** | ![Terminal](screenshots/Terminal.png "Terminal") |
+| **GnomeLibadwaita** | ![GnomeLibadwaita](screenshots/GnomeLibadwaita.png "GnomeLibadwaita") |
+| **NetflixCinema** | ![NetflixCinema](screenshots/NetflixCinema.png "NetflixCinema") |
+| **Plexed** | ![Plexed](screenshots/Plexed.png "Plexed") |
+| **Spotilike** | ![Spotilike](screenshots/Spotilike.png "Spotilike") |
+| **UltraCompact** | ![UltraCompact](screenshots/UltraCompact.png "UltraCompact") |
+| **VHSRetro** | ![VHSRetro](screenshots/VHSRetro.png "VHSRetro") |
+| **WinampNostalgia** | ![WinampNostalgia](screenshots/WinampNostalgia.png "WinampNostalgia") |
+| **YouTubePlayer** | ![YouTubePlayer](screenshots/YouTubePlayer.png "YouTubePlayer") |
+| **ZenGlass** | ![ZenGlass](screenshots/ZenGlass.png "ZenGlass") |
 
 Cadre is a modular UI suite for [mpv](https://mpv.io/). Its components can be used together as one interface or enabled separately according to your workflow.
 
