@@ -25,7 +25,7 @@ end)
 -- CONFIG
 --------------------------------------------------------------------------------
 
-local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
+local theme = common.theme
 
 local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined"
@@ -143,6 +143,7 @@ local ICON = {
   add_file = "\238\137\141",    -- U+E24D
   add_folder = "\238\139\140",  -- U+E2CC
   add_url = "\238\133\151",     -- U+E157
+  subs = "\238\129\136" ,       -- U+E048
 }
 
 --------------------------------------------------------------------------------
@@ -199,15 +200,18 @@ local volume = 100
 
 local volume_popup_open = false
 local add_menu_open = false
+local subtitle_menu_open = false
 local volume_dragging = false
 local volume_slider_dragging = false
 local seek_dragging = false
 local hitboxes = {}
 local popup_geo = nil
 local add_menu_geo = nil
-
+local subtitle_menu_geo = nil
 local chapters = {}
 local hovered_chapter = nil
+local subtitle_menu_scroll = 0
+local subtitle_menu_max_scroll = 0
 
 --------------------------------------------------------------------------------
 -- HELPERS
@@ -416,7 +420,7 @@ end
 local DEFAULT_BUTTON_LAYOUT = {
   left = { "prev", "play", "next", "stop" },
   center = {},
-  right = { "volume", "add", "fullscreen", "playlist" },
+  right = { "volume", "add", "subtitle", "fullscreen", "playlist" },
 }
 
 local function configured_button_layout()
@@ -572,6 +576,18 @@ local BUTTONS = {
   time = {
     kind = "time",
     click = function() end,
+  },
+  subtitle = {
+    icon = function()
+        local sid = mp.get_property_native("sid")
+        local has_sub = sid ~= nil and sid ~= "no" and type(sid) == "number"
+        return has_sub and ICON.subs or ICON.subs
+    end,
+    click = function()
+        subtitle_menu_open = not subtitle_menu_open
+        volume_popup_open = false
+        add_menu_open = false
+    end,
   },
 }
 
@@ -854,6 +870,676 @@ local function render_add_menu(ass, geo)
 end
 
 --------------------------------------------------------------------------------
+-- SUBTITLE SETTINGS DIALOG
+--------------------------------------------------------------------------------
+
+local SUB_MENU_WIDTH = 360
+local SUB_MENU_HEIGHT = 400
+local SUB_MENU_PADDING = 16
+local SUB_MENU_RADIUS = 12
+
+local SUB_MENU_HEADER_H = 48
+local SUB_MENU_SETTINGS_H = 196
+local SUB_MENU_TRACKS_TITLE_H = 30
+local SUB_MENU_FOOTER_H = 42
+local SUB_MENU_ROW_H = 34
+
+local function get_subtitle_tracks()
+  local all_tracks = mp.get_property_native("track-list", {})
+  local tracks = {}
+
+  for _, track in ipairs(all_tracks) do
+    if track.type == "sub" then
+      tracks[#tracks + 1] = track
+    end
+  end
+
+  return tracks
+end
+
+local function subtitle_track_text(track, index)
+  local title = track.title
+  local language = track.lang
+
+  if title and title ~= "" then
+    return title, language
+  end
+
+  if language and language ~= "" then
+    return language, nil
+  end
+
+  if track["external-filename"]
+    and track["external-filename"] ~= "" then
+    local filename = track["external-filename"]
+
+    -- Keep only the filename, removing the directory portion.
+    filename = filename:match("([^/\\]+)$") or filename
+
+    -- Remove the final extension: .srt, .ass, .vtt, etc.
+    filename = filename:gsub("%.[^%.]+$", "")
+
+    if filename ~= "" then
+      return filename, nil
+    end
+  end
+
+  return "Track " .. tostring(index), nil
+end
+
+local function truncate_subtitle_text(text, max_chars)
+  if not text or text == "" then return "" end
+  if #text <= max_chars then return text end
+  return text:sub(1, max_chars - 1) .. "…"
+end
+
+local function compute_subtitle_menu_geo()
+  local screen_margin = 18
+
+  local card_w = math.min(
+    SUB_MENU_WIDTH,
+    screen_w - screen_margin * 2
+  )
+
+  local card_h = math.min(
+    SUB_MENU_HEIGHT,
+    screen_h - screen_margin * 2
+  )
+
+  -- The dialog is deliberately centered. It does not cover a specific OSC
+  -- button or collide with the playlist button on the bottom bar.
+  local card_x1 = math.floor((screen_w - card_w) / 2)
+  local card_y1 = math.floor((screen_h - card_h) / 2)
+  local card_x2 = card_x1 + card_w
+  local card_y2 = card_y1 + card_h
+
+  local content_x1 = card_x1 + SUB_MENU_PADDING
+  local content_x2 = card_x2 - SUB_MENU_PADDING
+
+  -- Fixed, non-scrollable sections.
+  local header_y1 = card_y1
+  local header_y2 = header_y1 + SUB_MENU_HEADER_H
+
+  local settings_y1 = header_y2
+  local settings_y2 = settings_y1 + SUB_MENU_SETTINGS_H
+
+  local tracks_title_y1 = settings_y2
+  local tracks_title_y2 = tracks_title_y1 + SUB_MENU_TRACKS_TITLE_H
+
+  local footer_y2 = card_y2
+  local footer_y1 = footer_y2 - SUB_MENU_FOOTER_H
+
+  -- Only this rectangle contains the scrolling track rows.
+  local tracks_y1 = tracks_title_y2 + 2
+  local tracks_y2 = footer_y1 - 6
+
+  return {
+    card_x1 = card_x1,
+    card_x2 = card_x2,
+    card_y1 = card_y1,
+    card_y2 = card_y2,
+
+    content_x1 = content_x1,
+    content_x2 = content_x2,
+
+    header_y1 = header_y1,
+    header_y2 = header_y2,
+
+    settings_y1 = settings_y1,
+    settings_y2 = settings_y2,
+
+    tracks_title_y1 = tracks_title_y1,
+    tracks_title_y2 = tracks_title_y2,
+
+    tracks_y1 = tracks_y1,
+    tracks_y2 = tracks_y2,
+
+    footer_y1 = footer_y1,
+    footer_y2 = footer_y2,
+  }
+end
+
+local function draw_subtitle_separator(ass, geo, y)
+  common.draw_rrect(
+    ass,
+    geo.content_x1,
+    y,
+    geo.content_x2,
+    y + 1,
+    0,
+    TRACK_BG,
+    "40"
+  )
+end
+
+local function draw_subtitle_step_button(ass, x, y, symbol)
+  common.draw_rrect(
+    ass,
+    x - 13,
+    y - 13,
+    x + 13,
+    y + 13,
+    5,
+    TRACK_BG,
+    "20"
+  )
+
+  common.draw_text(
+    ass,
+    symbol,
+    x,
+    y,
+    FONT_SIZE + 1,
+    TEXT,
+    "00",
+    5,
+    false
+  )
+end
+
+local function draw_subtitle_setting_row(
+  ass,
+  geo,
+  row_y,
+  label,
+  value,
+  minus_name,
+  minus_callback,
+  plus_name,
+  plus_callback
+)
+  local row_center_y = row_y + SUB_MENU_ROW_H / 2
+
+  -- Fixed columns: label | minus | value | plus.
+  local SETTINGS_RIGHT_PAD = 18
+
+  local minus_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 82
+  local value_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 43
+  local plus_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 4
+
+  common.draw_text(
+    ass,
+    label,
+    geo.content_x1,
+    row_center_y,
+    FONT_SIZE - 1,
+    TEXT,
+    "00",
+    4,
+    false
+  )
+
+  draw_subtitle_step_button(ass, minus_x, row_center_y, "−")
+  draw_subtitle_step_button(ass, plus_x, row_center_y, "+")
+
+  common.draw_text(
+    ass,
+    value,
+    value_x,
+    row_center_y,
+    FONT_SIZE - 1,
+    TEXT,
+    "00",
+    5,
+    false
+  )
+
+  add_hitbox(
+    minus_name,
+    minus_x - 16,
+    row_y,
+    minus_x + 16,
+    row_y + SUB_MENU_ROW_H,
+    minus_callback
+  )
+
+  add_hitbox(
+    plus_name,
+    plus_x - 16,
+    row_y,
+    plus_x + 16,
+    row_y + SUB_MENU_ROW_H,
+    plus_callback
+  )
+end
+
+local function draw_subtitle_track_row(
+  ass,
+  geo,
+  row_y,
+  title,
+  language,
+  selected,
+  hitbox_name,
+  callback
+)
+  -- Rows outside the viewport must not be drawn or clickable.
+  if row_y + SUB_MENU_ROW_H <= geo.tracks_y1 then return end
+  if row_y >= geo.tracks_y2 then return end
+
+  local visible_y1 = math.max(row_y, geo.tracks_y1)
+  local visible_y2 = math.min(row_y + SUB_MENU_ROW_H, geo.tracks_y2)
+  local center_y = row_y + SUB_MENU_ROW_H / 2
+
+  -- Selected rows receive a subtle accent-background pill.
+  if selected then
+    common.draw_rrect(
+      ass,
+      geo.content_x1,
+      visible_y1 + 2,
+      geo.content_x2 - 10,
+      visible_y2 - 2,
+      6,
+      TRACK_FG,
+      "D8"
+    )
+  end
+
+  -- Deliberately text-based radio marks: no Material Icon glyph dependency.
+  common.draw_text(
+    ass,
+    selected and "●" or "○",
+    geo.content_x1 + 12,
+    center_y,
+    FONT_SIZE,
+    selected and TRACK_FG or ICON_COLOR,
+    selected and "00" or ICON_DIM_A,
+    5,
+    false
+  )
+
+  common.draw_text(
+    ass,
+    truncate_subtitle_text(title, 29),
+    geo.content_x1 + 38,
+    center_y,
+    FONT_SIZE - 1,
+    TEXT,
+    "00",
+    4,
+    false
+  )
+
+  -- Language is separate and right-aligned, rather than appended to title.
+  if language and language ~= "" then
+    common.draw_text(
+      ass,
+      truncate_subtitle_text(language, 10),
+      geo.content_x2 - 14,
+      center_y,
+      FONT_SIZE - 2,
+      TEXT,
+      "35",
+      6,
+      false
+    )
+  end
+
+  add_hitbox(
+    hitbox_name,
+    geo.content_x1,
+    visible_y1,
+    geo.content_x2,
+    visible_y2,
+    callback
+  )
+end
+
+local function render_subtitle_menu(ass, geo)
+  local sub_tracks = get_subtitle_tracks()
+  local current_sid = mp.get_property_native("sid")
+
+  --------------------------------------------------------------------------
+  -- Dialog panel: opaque enough to read over any video frame.
+  --------------------------------------------------------------------------
+
+  common.draw_rrect(
+    ass,
+    geo.card_x1,
+    geo.card_y1,
+    geo.card_x2,
+    geo.card_y2,
+    SUB_MENU_RADIUS,
+    BARBG,
+    "00"
+  )
+
+  draw_rrect_outline(
+    ass,
+    geo.card_x1,
+    geo.card_y1,
+    geo.card_x2,
+    geo.card_y2,
+    SUB_MENU_RADIUS,
+    ICON_COLOR,
+    "C0",
+    1
+  )
+
+  --------------------------------------------------------------------------
+  -- Header: fixed.
+  --------------------------------------------------------------------------
+
+  common.draw_text(
+    ass,
+    "Subtitles",
+    geo.content_x1,
+    geo.header_y1 + SUB_MENU_HEADER_H / 2,
+    FONT_SIZE + 1,
+    TEXT,
+    "00",
+    4,
+    false
+  )
+
+  common.draw_text(
+    ass,
+    "×",
+    geo.content_x2 - 4,
+    geo.header_y1 + SUB_MENU_HEADER_H / 2,
+    FONT_SIZE + 6,
+    ICON_COLOR,
+    "00",
+    5,
+    false
+  )
+
+  add_hitbox(
+    "subtitle_dialog_close",
+    geo.content_x2 - 40,
+    geo.header_y1 + 6,
+    geo.content_x2 + 4,
+    geo.header_y2 - 6,
+    function()
+      subtitle_menu_open = false
+      subtitle_menu_scroll = 0
+    end
+  )
+
+  draw_subtitle_separator(ass, geo, geo.header_y2)
+
+  --------------------------------------------------------------------------
+  -- Settings: fixed. The minus / value / plus columns never overlap.
+  --------------------------------------------------------------------------
+
+  local sub_delay = mp.get_property_number("sub-delay", 0) or 0
+  local sub_scale = mp.get_property_number("sub-scale", 1.0) or 1.0
+  local sub_pos = mp.get_property_number("sub-pos", 100) or 100
+  local sub_outline = mp.get_property_number("sub-outline-size", 1.65) or 0
+  local sub_shadow = mp.get_property_number("sub-shadow-offset", 0) or 0
+
+  draw_subtitle_setting_row(
+    ass,
+    geo,
+    geo.settings_y1 + 5,
+    "Delay",
+    string.format("%.1f s", sub_delay),
+    "subtitle_delay_minus",
+    function()
+      mp.commandv("add", "sub-delay", -0.1)
+    end,
+    "subtitle_delay_plus",
+    function()
+      mp.commandv("add", "sub-delay", 0.1)
+    end
+  )
+
+  draw_subtitle_setting_row(
+    ass,
+    geo,
+    geo.settings_y1 + 43,
+    "Scale",
+    string.format("%d%%", math.floor(sub_scale * 100 + 0.5)),
+    "subtitle_scale_minus",
+    function()
+      mp.set_property_number("sub-scale", math.max(0.5, sub_scale - 0.1))
+    end,
+    "subtitle_scale_plus",
+    function()
+      mp.set_property_number("sub-scale", math.min(3.0, sub_scale + 0.1))
+    end
+  )
+
+  draw_subtitle_setting_row(
+    ass,
+    geo,
+    geo.settings_y1 + 81,
+    "Position",
+    string.format("%d%%", math.floor(sub_pos + 0.5)),
+    "subtitle_pos_minus",
+    function()
+      mp.set_property_number(
+        "sub-pos",
+        math.max(0, sub_pos - 5)
+      )
+    end,
+    "subtitle_pos_plus",
+    function()
+      mp.set_property_number(
+        "sub-pos",
+        math.min(150, sub_pos + 5)
+      )
+    end
+  )
+
+  draw_subtitle_setting_row(
+    ass,
+    geo,
+    geo.settings_y1 + 119,
+    "Outline",
+    string.format("%.2f", sub_outline),
+    "subtitle_outline_minus",
+    function()
+      mp.set_property_number(
+        "sub-outline-size",
+        math.max(0, sub_outline - 0.15)
+      )
+    end,
+    "subtitle_outline_plus",
+    function()
+      mp.set_property_number(
+        "sub-outline-size",
+        math.min(10, sub_outline + 0.15)
+      )
+    end
+  )
+
+  draw_subtitle_setting_row(
+    ass,
+    geo,
+    geo.settings_y1 + 157,
+    "Shadow",
+    string.format("%.1f", sub_shadow),
+    "subtitle_shadow_minus",
+    function()
+      mp.set_property_number(
+        "sub-shadow-offset",
+        math.max(0, sub_shadow - 0.5)
+      )
+    end,
+    "subtitle_shadow_plus",
+    function()
+      mp.set_property_number(
+        "sub-shadow-offset",
+        math.min(10, sub_shadow + 0.5)
+      )
+    end
+  )
+
+  draw_subtitle_separator(ass, geo, geo.settings_y2)
+
+  --------------------------------------------------------------------------
+  -- Track-list heading: fixed.
+  --------------------------------------------------------------------------
+
+  common.draw_text(
+    ass,
+    "Tracks",
+    geo.content_x1,
+    geo.tracks_title_y1 + SUB_MENU_TRACKS_TITLE_H / 2,
+    FONT_SIZE - 2,
+    TEXT,
+    "25",
+    4,
+    false
+  )
+
+  draw_subtitle_separator(ass, geo, geo.tracks_title_y2)
+
+  --------------------------------------------------------------------------
+  -- Subtitle track list: scrollable viewport.
+  --
+  -- Manual row culling is intentional: common.draw_text and draw_icon make
+  -- separate ASS events, so an ASS clip would not safely apply to all rows.
+  --------------------------------------------------------------------------
+
+  local list_height = geo.tracks_y2 - geo.tracks_y1
+  local visible_rows = math.max(
+    1,
+    math.floor(list_height / SUB_MENU_ROW_H)
+  )
+
+  local total_rows = #sub_tracks + 1
+  subtitle_menu_max_scroll = math.max(0, total_rows - visible_rows)
+
+  subtitle_menu_scroll = math.max(
+    0,
+    math.min(subtitle_menu_scroll, subtitle_menu_max_scroll)
+  )
+
+  local first_row_y = geo.tracks_y1
+    - subtitle_menu_scroll * SUB_MENU_ROW_H
+
+  local disabled = current_sid == nil or current_sid == "no"
+
+  draw_subtitle_track_row(
+    ass,
+    geo,
+    first_row_y,
+    "Disable subtitles",
+    nil,
+    disabled,
+    "subtitle_disable",
+    function()
+      mp.set_property("sid", "no")
+    end
+  )
+
+  for i, track in ipairs(sub_tracks) do
+    local row_y = first_row_y + i * SUB_MENU_ROW_H
+    local title, language = subtitle_track_text(track, i)
+
+    draw_subtitle_track_row(
+      ass,
+      geo,
+      row_y,
+      title,
+      language,
+      current_sid == track.id,
+      "subtitle_track_" .. tostring(i),
+      function()
+        mp.set_property_number("sid", track.id)
+      end
+    )
+  end
+
+  --------------------------------------------------------------------------
+  -- Scrollbar: visible only when more rows exist than can fit.
+  --------------------------------------------------------------------------
+
+  if subtitle_menu_max_scroll > 0 then
+    common.draw_rrect(
+      ass,
+      geo.content_x2 - 5,
+      geo.tracks_y1 + 2,
+      geo.content_x2 - 2,
+      geo.tracks_y2 - 2,
+      2,
+      TRACK_BG,
+      "30"
+    )
+
+    local thumb_h = math.max(
+      24,
+      list_height * (visible_rows / total_rows)
+    )
+
+    local thumb_travel = list_height - thumb_h
+    local thumb_y = geo.tracks_y1
+      + thumb_travel
+      * (subtitle_menu_scroll / subtitle_menu_max_scroll)
+
+    common.draw_rrect(
+      ass,
+      geo.content_x2 - 6,
+      thumb_y,
+      geo.content_x2 - 1,
+      thumb_y + thumb_h,
+      3,
+      TRACK_FG,
+      "00"
+    )
+  end
+
+  --------------------------------------------------------------------------
+  -- Footer: fixed and separate from the list.
+  --------------------------------------------------------------------------
+
+  draw_subtitle_separator(ass, geo, geo.footer_y1)
+
+  common.draw_text(
+    ass,
+    "Reset",
+    geo.content_x1 + 26,
+    geo.footer_y1 + SUB_MENU_FOOTER_H / 2,
+    FONT_SIZE - 1,
+    TEXT,
+    "35",
+    5,
+    false
+  )
+
+  common.draw_text(
+    ass,
+    "Done",
+    geo.content_x2 - 24,
+    geo.footer_y1 + SUB_MENU_FOOTER_H / 2,
+    FONT_SIZE - 1,
+    TRACK_FG,
+    "00",
+    5,
+    false
+  )
+
+  add_hitbox(
+    "subtitle_reset",
+    geo.content_x1,
+    geo.footer_y1,
+    geo.content_x1 + 104,
+    geo.footer_y2,
+    function()
+      mp.set_property_number("sub-delay", 0)
+      mp.set_property_number("sub-scale", 1.0)
+      mp.set_property_number("sub-pos", 100)
+      mp.set_property_number("sub-outline-size", 1.65)
+      mp.set_property_number("sub-shadow-offset", 0)
+    end
+  )
+
+  add_hitbox(
+    "subtitle_footer_close",
+    geo.content_x2 - 104,
+    geo.footer_y1,
+    geo.content_x2,
+    geo.footer_y2,
+    function()
+      subtitle_menu_open = false
+      subtitle_menu_scroll = 0
+    end
+  )
+end
+
+--------------------------------------------------------------------------------
 -- MAIN RENDER
 --------------------------------------------------------------------------------
 
@@ -1109,6 +1795,14 @@ local function render()
     add_menu_geo = nil
   end
 
+  if subtitle_menu_open and L.buttons.by_id.subtitle then
+    subtitle_menu_geo = compute_subtitle_menu_geo(L)
+    render_subtitle_menu(ass, subtitle_menu_geo)
+  else
+    subtitle_menu_open = false
+    subtitle_menu_geo = nil
+  end
+
   osd.data = ass.text
   osd.res_x = screen_w
   osd.res_y = screen_h
@@ -1131,6 +1825,13 @@ local function mouse_in_active_zone()
   end
   if add_menu_geo and mouse_x >= add_menu_geo.card_x1 - 14 and mouse_x <= add_menu_geo.card_x2 + 14
     and mouse_y >= add_menu_geo.card_y1 - 14 and mouse_y <= add_menu_geo.card_y2 + 14 then
+    return true
+  end
+  if subtitle_menu_geo
+    and mouse_x >= subtitle_menu_geo.card_x1 - 10
+    and mouse_x <= subtitle_menu_geo.card_x2 + 10
+    and mouse_y >= subtitle_menu_geo.card_y1 - 10
+    and mouse_y <= subtitle_menu_geo.card_y2 + 10 then
     return true
   end
   return false
@@ -1165,6 +1866,9 @@ local function toggle_bar()
     bar_visible = false
     volume_popup_open = false
     add_menu_open = false
+    subtitle_menu_open = false
+    subtitle_menu_geo = nil
+    subtitle_menu_scroll = 0
     render()
   else
     show_bar()
@@ -1205,17 +1909,34 @@ end
 
 local function point_in_own_ui(px, py)
   local L = get_layout()
-  if px >= L.pill_x1 and px <= L.pill_x2 and py >= L.pill_y1 and py <= L.pill_y2 then
+
+  -- Main OSC control-bar region.
+  if px >= L.pill_x1 and px <= L.pill_x2
+    and py >= L.pill_y1 and py <= L.pill_y2 then
     return true
   end
-  if popup_geo and px >= popup_geo.card_x1 and px <= popup_geo.card_x2
+
+  -- Volume flyout.
+  if popup_geo
+    and px >= popup_geo.card_x1 and px <= popup_geo.card_x2
     and py >= popup_geo.card_y1 and py <= popup_geo.card_y2 then
     return true
   end
-  if add_menu_geo and px >= add_menu_geo.card_x1 and px <= add_menu_geo.card_x2
+
+  -- Add-file flyout.
+  if add_menu_geo
+    and px >= add_menu_geo.card_x1 and px <= add_menu_geo.card_x2
     and py >= add_menu_geo.card_y1 and py <= add_menu_geo.card_y2 then
     return true
   end
+
+  -- Subtitle settings dialog.
+  if subtitle_menu_geo
+    and px >= subtitle_menu_geo.card_x1 and px <= subtitle_menu_geo.card_x2
+    and py >= subtitle_menu_geo.card_y1 and py <= subtitle_menu_geo.card_y2 then
+    return true
+  end
+
   return false
 end
 
@@ -1391,6 +2112,39 @@ local function on_mbtn_left(event)
               render()
           end
       end
+        if subtitle_menu_open and subtitle_menu_geo then
+              local in_subtitle_menu =
+                mouse_x >= subtitle_menu_geo.card_x1
+                and mouse_x <= subtitle_menu_geo.card_x2
+                and mouse_y >= subtitle_menu_geo.card_y1
+                and mouse_y <= subtitle_menu_geo.card_y2
+
+              if in_subtitle_menu then
+                -- Subtitle hitboxes are created after the normal OSC hitboxes.
+                -- Search backward so the dialog has topmost click priority.
+                for i = #hitboxes, 1, -1 do
+                  local b = hitboxes[i]
+
+                  if b.name:match("^subtitle_")
+                    and point_in(mouse_x, mouse_y, b) then
+                    b.cb(mouse_x, mouse_y)
+                    render()
+                    return
+                  end
+                end
+
+                -- Blank space inside the modal should be consumed, not passed
+                -- through to the seek bar or other controls.
+                return
+              else
+                -- Clicking outside the subtitle dialog closes it.
+                subtitle_menu_open = false
+                subtitle_menu_geo = nil
+                subtitle_menu_scroll = 0
+                render()
+                return
+              end
+            end
 
       for _, b in ipairs(hitboxes) do
         if point_in(mouse_x, mouse_y, b) then
@@ -1436,6 +2190,22 @@ mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
   if point_in_own_ui(mouse_x, mouse_y) then return end
   mp.commandv("cycle", "fullscreen")
 end)
+mp.add_key_binding("WHEEL_UP", "subtitle_menu_scroll_up", function()
+  if not subtitle_menu_open then return end
+
+  subtitle_menu_scroll = math.max(0, subtitle_menu_scroll - 1)
+  render()
+end, { repeatable = true })
+
+mp.add_key_binding("WHEEL_DOWN", "subtitle_menu_scroll_down", function()
+  if not subtitle_menu_open then return end
+
+  subtitle_menu_scroll = math.min(
+    subtitle_menu_max_scroll,
+    subtitle_menu_scroll + 1
+  )
+  render()
+end, { repeatable = true })
 
 --------------------------------------------------------------------------------
 -- PROPERTY OBSERVERS

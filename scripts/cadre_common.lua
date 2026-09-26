@@ -10,6 +10,8 @@ local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 
 local M = {}
 
+M.theme = theme
+
 local property_cache = {}
 
 function M.register_script(name)

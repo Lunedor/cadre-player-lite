@@ -15,7 +15,7 @@ common.register_script("cadre_playlist")
 -- CONFIG
 --------------------------------------------------------------------------------
 
-local theme = dofile(mp.find_config_file("scripts/cadre_theme.lua"))
+local theme = common.theme
 
 local UI_FONT = theme.font_ui or theme.font_text or "Inter"
 local ICON_FONT = theme.font_icon_pl or theme.font_icon or "Material Icons Outlined"
