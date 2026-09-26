@@ -2190,21 +2190,93 @@ mp.add_key_binding("MBTN_LEFT_DBL", "cadre_mbtn_left_dbl", function()
   if point_in_own_ui(mouse_x, mouse_y) then return end
   mp.commandv("cycle", "fullscreen")
 end)
-mp.add_key_binding("WHEEL_UP", "subtitle_menu_scroll_up", function()
-  if not subtitle_menu_open then return end
+--------------------------------------------------------------------------------
+-- MOUSE WHEEL
+--------------------------------------------------------------------------------
 
-  subtitle_menu_scroll = math.max(0, subtitle_menu_scroll - 1)
-  render()
+mp.add_key_binding("WHEEL_UP", "cadre_wheel_up", function()
+  local L = get_layout()
+
+  -- Subtitle dialog owns the wheel only while it is open.
+  if subtitle_menu_open then
+    subtitle_menu_scroll = math.max(0, subtitle_menu_scroll - 1)
+    render()
+    return
+  end
+
+  -- Vertical volume popup.
+  if volume_popup_open and popup_geo
+    and mouse_x >= popup_geo.card_x1 and mouse_x <= popup_geo.card_x2
+    and mouse_y >= popup_geo.card_y1 and mouse_y <= popup_geo.card_y2 then
+    mp.commandv("add", "volume", 2)
+    return
+  end
+
+  -- Seekbar.
+  if mouse_x >= L.seek_x1 and mouse_x <= L.seek_x2
+    and mouse_y >= L.seek_y - 12 and mouse_y <= L.seek_y + 12 then
+    mp.commandv("seek", 5, "relative")
+    return
+  end
+
+  -- Inline horizontal volume slider, if "volume_slider" is in the layout.
+  for _, group in ipairs({ "left", "center", "right" }) do
+    for _, button in ipairs(L.buttons[group]) do
+      if button.id == "volume_slider" then
+        local geo = get_volume_slider_geometry(button)
+
+        if mouse_x >= geo.slider_x1 - 8 and mouse_x <= geo.slider_x2 + 8
+          and mouse_y >= L.row_y - 18 and mouse_y <= L.row_y + 18 then
+          mp.commandv("add", "volume", 2)
+          return
+        end
+      end
+    end
+  end
 end, { repeatable = true })
 
-mp.add_key_binding("WHEEL_DOWN", "subtitle_menu_scroll_down", function()
-  if not subtitle_menu_open then return end
+mp.add_key_binding("WHEEL_DOWN", "cadre_wheel_down", function()
+  local L = get_layout()
 
-  subtitle_menu_scroll = math.min(
-    subtitle_menu_max_scroll,
-    subtitle_menu_scroll + 1
-  )
-  render()
+  -- Subtitle dialog owns the wheel only while it is open.
+  if subtitle_menu_open then
+    subtitle_menu_scroll = math.min(
+      subtitle_menu_max_scroll,
+      subtitle_menu_scroll + 1
+    )
+    render()
+    return
+  end
+
+  -- Vertical volume popup.
+  if volume_popup_open and popup_geo
+    and mouse_x >= popup_geo.card_x1 and mouse_x <= popup_geo.card_x2
+    and mouse_y >= popup_geo.card_y1 and mouse_y <= popup_geo.card_y2 then
+    mp.commandv("add", "volume", -2)
+    return
+  end
+
+  -- Seekbar.
+  if mouse_x >= L.seek_x1 and mouse_x <= L.seek_x2
+    and mouse_y >= L.seek_y - 12 and mouse_y <= L.seek_y + 12 then
+    mp.commandv("seek", -5, "relative")
+    return
+  end
+
+  -- Inline horizontal volume slider, if "volume_slider" is in the layout.
+  for _, group in ipairs({ "left", "center", "right" }) do
+    for _, button in ipairs(L.buttons[group]) do
+      if button.id == "volume_slider" then
+        local geo = get_volume_slider_geometry(button)
+
+        if mouse_x >= geo.slider_x1 - 8 and mouse_x <= geo.slider_x2 + 8
+          and mouse_y >= L.row_y - 18 and mouse_y <= L.row_y + 18 then
+          mp.commandv("add", "volume", -2)
+          return
+        end
+      end
+    end
+  end
 end, { repeatable = true })
 
 --------------------------------------------------------------------------------
