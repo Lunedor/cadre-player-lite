@@ -874,7 +874,7 @@ end
 --------------------------------------------------------------------------------
 
 local SUB_MENU_WIDTH = 360
-local SUB_MENU_HEIGHT = 400
+local SUB_MENU_HEIGHT = 450
 local SUB_MENU_PADDING = 16
 local SUB_MENU_RADIUS = 12
 
@@ -1310,14 +1310,14 @@ local function render_subtitle_menu(ass, geo)
     function()
       mp.set_property_number(
         "sub-pos",
-        math.max(0, sub_pos - 5)
+        math.max(0, sub_pos - 1)
       )
     end,
     "subtitle_pos_plus",
     function()
       mp.set_property_number(
         "sub-pos",
-        math.min(150, sub_pos + 5)
+        math.min(150, sub_pos + 1)
       )
     end
   )
