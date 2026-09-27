@@ -3,13 +3,15 @@
  cadre_theme.lua
  Default Theme Configuration
 
- Default theme for the Cadre UI. This file contains every possible customization variable, allowing users to tweak the appearance of the interface to their liking. 
- By default, all settings are commented out, meaning the player will use its hardcoded default fallbacks. To customize, simply uncomment a line and change its value.
+ Default theme for the Cadre UI. This file contains every possible customization variable,
+ allowing users to tweak the appearance of the interface to their liking.
+ By default, all settings are commented out, meaning the player will use its hardcoded default fallbacks.
+ To customize, simply uncomment a line and change its value.
  Author: Lunedor
 
  HOW TO USE:
  This file contains every possible customization variable.
- By default, everything is commented out with `--`, meaning 
+ By default, everything is commented out with `--`, meaning
  the player will use its hardcoded default fallbacks.
 
  To change a setting:
@@ -28,13 +30,13 @@ local M = {}
 
 M.theme_name = "Default Theme"
 M.theme_author = "Lunedor"
-M.theme_variant = Default -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
+M.theme_variant = "ZenGlass" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
 
 ----------------------------------------------------------
 -- 1. CORE PALETTE (Global Base)
 ----------------------------------------------------------
--- These define the fundamental look of the application. 
--- Most components will inherit these colors unless 
+-- These define the fundamental look of the application.
+-- Most components will inherit these colors unless
 -- specifically overridden in the sections below.
 
 -- M.accent_color     = "A4A4A4" -- Primary highlight (progress bar, active items, selections)
@@ -212,13 +214,13 @@ M.theme_variant = Default -- Replaces this file with script-opts/cadre-themes/<n
 -- =======================================================
 -- 4.7. BUTTON GROUPS
 -- =======================================================
--- M.icon_group_bg_enabled_osc     = true          -- Enable a subtle background behind each button group for better visibility
+-- M.icon_group_bg_enabled_osc     = true          -- Enable a background behind each button group for better visibility
 -- M.icon_group_bg_color_osc       = "111111"      -- Background color of the button group backgrounds
 -- M.icon_group_bg_alpha_osc       = "60"          -- 00 = opaque, FF = invisible
 -- M.icon_group_bg_padding_osc     = 16            -- Horizontal padding inside the button group background
 -- M.icon_group_bg_height_osc      = 48            -- Height of the button group background
 -- M.icon_group_bg_radius_osc      = 24            -- Corner roundness of the button group background
--- M.icon_group_border_enabled_osc = false         -- Enable a subtle border around each button group for better visibility
+-- M.icon_group_border_enabled_osc = false         -- Enable a border around each button group for better visibility
 -- M.icon_group_border_color_osc   = "FFFFFF"      -- Color of the border around the button group background
 -- M.icon_group_border_alpha_osc   = "40"          -- 00 = opaque, FF = invisible
 -- M.icon_group_border_width_osc   = 1             -- Thickness of the border around the button group background
