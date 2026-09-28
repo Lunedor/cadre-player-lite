@@ -30,7 +30,7 @@ local M = {}
 
 M.theme_name = "Default Theme"
 M.theme_author = "Lunedor"
-M.theme_variant = "ZenGlass" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
+M.theme_variant = Default -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
 
 ----------------------------------------------------------
 -- 1. CORE PALETTE (Global Base)
@@ -112,7 +112,7 @@ M.theme_variant = "ZenGlass" -- Replaces this file with script-opts/cadre-themes
 -- 4.2. LAYOUT & SLOTS (Button Placement)
 -- =======================================================
 -- Supported buttons: prev, seek_back, play, pause, seek_forward, next, stop,
--- volume, volume_slider, mute, add, fullscreen, playlist, time, subtitle.
+-- volume, volume_slider, mute, add, fullscreen, playlist, time, settings, subtitle.
 -- Set a slot to false to remove it. The number controls order.
 
 -- Left Group

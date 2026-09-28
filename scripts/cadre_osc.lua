@@ -28,108 +28,109 @@ mp.register_script_message(
 --------------------------------------------------------------------------------
 
 local theme = common.theme
+local cfg = {
+    UI_FONT = theme.font_ui or theme.font_text or "Inter",
+    ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined",
+    ICON_COLOR = common.bgr(theme.color_icon_osc or theme.text_color or "F8FAFC"),
+    TEXT = common.bgr(theme.color_text_osc or theme.text_color or "F8FAFC"),
+    FONT_SIZE = theme.font_size_osc or theme.font_size or 16,
+    BARBG = common.bgr(theme.color_bar_bg_osc or theme.surface_color or "0D1117"),
+    ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "1C",
+    TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.accent_color or "63B8FF"),
+    TRACK_BG = common.bgr(theme.color_track_bg_osc or "303845"),
+    SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or "1E293B"),
+    THUMB_WCOLOR = common.bgr(theme.thumb_color or theme.color_track_fg_osc or theme.accent_color or "F8FAFC"),
+    ICON_DIM_A = theme.alpha_icon_dim_osc or theme.alpha_icon_dim or "60",
 
-local UI_FONT = theme.font_ui or theme.font_text or "Inter"
-local ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined"
-local ICON_COLOR = common.bgr(theme.color_icon_osc or theme.text_color or "F8FAFC")
-local TEXT = common.bgr(theme.color_text_osc or theme.text_color or "F8FAFC")
-local FONT_SIZE = theme.font_size_osc or theme.font_size or 16
-local BARBG = common.bgr(theme.color_bar_bg_osc or theme.surface_color or "0D1117")
-local ALPHA_BAR_BG = theme.alpha_bar_bg_osc or theme.alpha_bar_bg or "1C"
-local TRACK_FG = common.bgr(theme.color_track_fg_osc or theme.accent_color or "63B8FF")
-local TRACK_BG = common.bgr(theme.color_track_bg_osc or "303845")
-local SLIDER_RAIL = common.bgr(theme.color_slider_rail_osc or "1E293B")
-local THUMB_COLOR = common.bgr(theme.thumb_color or theme.color_track_fg_osc or theme.accent_color or "F8FAFC")
-local ICON_DIM_A = theme.alpha_icon_dim_osc or theme.alpha_icon_dim or "60"
+    BAR_HEIGHT = theme.bar_height_osc or theme.bar_height or 100,
+    BAR_SIDE_INSET = theme.bar_side_inset_osc or theme.bar_side_inset or 0,
+    BAR_Y_ANCHOR =
+    theme.bar_y_anchor_osc == "top" and "top" or theme.bar_y_anchor_osc == "center" and "center" or "bottom",
+    BAR_TOP_INSET = theme.bar_top_inset_osc or 0,
+    BAR_BOTTOM_INSET = theme.bar_bottom_inset_osc or theme.bar_bottom_inset or 0,
+    BAR_RADIUS = theme.bar_radius_osc or theme.bar_radius or 0,
+    AUTOHIDE_SEC = theme.bar_autohide_sec_osc or theme.bar_autohide_sec or 0.4,
 
-local BAR_HEIGHT = theme.bar_height_osc or theme.bar_height or 100
-local BAR_SIDE_INSET = theme.bar_side_inset_osc or theme.bar_side_inset or 0
-local BAR_Y_ANCHOR =
-    theme.bar_y_anchor_osc == "top" and "top" or theme.bar_y_anchor_osc == "center" and "center" or "bottom"
-local BAR_TOP_INSET = theme.bar_top_inset_osc or 0
-local BAR_BOTTOM_INSET = theme.bar_bottom_inset_osc or theme.bar_bottom_inset or 0
-local BAR_RADIUS = theme.bar_radius_osc or theme.bar_radius or 0
-local AUTOHIDE_SEC = theme.bar_autohide_sec_osc or theme.bar_autohide_sec or 0.4
+    THUMB_WW = theme.thumb_width or 4,
+    THUMB_WH = theme.thumb_height or 10,
+    THUMB_WRADIUS = theme.thumb_radius or 5,
+    SEEK_BORDER_COLOR = common.bgr(theme.seek_border_color_osc or "FFFFFF"),
+    SEEK_BORDER_ALPHA = theme.seek_border_alpha_osc or "FF",
+    SEEK_BORDER_WIDTH = theme.seek_border_width_osc or 1,
+    THUMB_WBORDER_COLOR = common.bgr(theme.thumb_border_color_osc or "000000"),
+    THUMB_WBORDER_ALPHA = theme.thumb_border_alpha_osc or "FF",
+    THUMB_WBORDER_WIDTH = theme.thumb_border_width_osc or 1,
+    SEEK_Y_OFFSET = theme.seek_y_offset or 14,
+    SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 6,
+    SEEK_HEIGHT_HOVER = theme.seek_height_hover or 10,
+    SEEK_SIDE_INSET = theme.seek_side_inset_osc or theme.side_margin or 24,
+    BUTTON_LEFT_INSET = theme.button_left_inset_osc or theme.side_margin or 24,
+    BUTTON_RIGHT_INSET = theme.button_right_inset_osc or theme.side_margin or 24,
+    BUTTON_Y_ANCHOR = theme.button_y_anchor_osc == "bottom" and "bottom" or "top",
+    BUTTON_ROW_OFFSET = theme.button_row_offset_osc or theme.button_row_offset or 60,
 
-local THUMB_W = theme.thumb_width or 4
-local THUMB_H = theme.thumb_height or 10
-local THUMB_RADIUS = theme.thumb_radius or 5
-local SEEK_BORDER_COLOR = common.bgr(theme.seek_border_color_osc or "FFFFFF")
-local SEEK_BORDER_ALPHA = theme.seek_border_alpha_osc or "FF"
-local SEEK_BORDER_WIDTH = theme.seek_border_width_osc or 1
-local THUMB_BORDER_COLOR = common.bgr(theme.thumb_border_color_osc or "000000")
-local THUMB_BORDER_ALPHA = theme.thumb_border_alpha_osc or "FF"
-local THUMB_BORDER_WIDTH = theme.thumb_border_width_osc or 1
-local SEEK_Y_OFFSET = theme.seek_y_offset or 14
-local SEEK_HEIGHT_NORMAL = theme.seek_height_normal or 6
-local SEEK_HEIGHT_HOVER = theme.seek_height_hover or 10
-local SEEK_SIDE_INSET = theme.seek_side_inset_osc or theme.side_margin or 24
-local BUTTON_LEFT_INSET = theme.button_left_inset_osc or theme.side_margin or 24
-local BUTTON_RIGHT_INSET = theme.button_right_inset_osc or theme.side_margin or 24
-local BUTTON_Y_ANCHOR = theme.button_y_anchor_osc == "bottom" and "bottom" or "top"
-local BUTTON_ROW_OFFSET = theme.button_row_offset_osc or theme.button_row_offset or 60
+    ICON_SPACING = theme.icon_spacing or 36,
+    ICON_SIZE = theme.icon_size or 24,
+    TIME_ITEM_WIDTH = theme.time_item_width_osc or 150,
+    TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16,
+    TIME_LABEL_OUTLINE_WIDTH =
+    theme.time_label_outline_osc and (theme.time_label_outline_width_osc or 2) or 0,
+    TIME_LABEL_OUTLINE_COLOR = common.bgr(theme.time_label_outline_color_osc or "000000"),
+    TIME_LABEL_OUTLINE_ALPHA = theme.time_label_outline_alpha_osc or "30",
+    TIME_LABEL_SHADOW = theme.time_label_shadow_osc and 1 or 0,
+    TIME_LABEL_SHADOW_X = theme.time_label_shadow_x_osc or 1,
+    TIME_LABEL_SHADOW_Y = theme.time_label_shadow_y_osc or 1,
+    TIME_LABEL_SHADOW_COLOR = common.bgr(theme.time_label_shadow_color_osc or "000000"),
+    TIME_LABEL_SHADOW_ALPHA = theme.time_label_shadow_alpha_osc or "40",
+    VOLUME_SLIDER_WIDTH = theme.volume_slider_width_osc or 110,
+    VOLUME_SLIDER_HEIGHT = theme.volume_slider_height_osc or 6,
+    VOLUME_SLIDER_THUMB_WIDTH = theme.volume_slider_thumb_width_osc or 4,
+    VOLUME_SLIDER_THUMB_HEIGHT = theme.volume_slider_thumb_height_osc or 12,
+    VOLUME_SLIDER_RADIUS = theme.volume_slider_radius_osc or 3,
+    VOLUME_SLIDER_COLOR = common.bgr(theme.volume_slider_color_osc or "FFFFFF"),
+    VOLUME_SLIDER_TRACK_COLOR = common.bgr(theme.volume_slider_track_color_osc or "444444"),
+    VOLUME_SLIDER_MUTE = theme.volume_slider_mute_osc ~= false,
+    VOLUME_SLIDER_MUTE_WIDTH = theme.volume_slider_mute_width_osc or theme.icon_size or 24,
+    VOLUME_SLIDER_MUTE_GAP = theme.volume_slider_mute_gap_osc or 8,
+    VOLUME_SLIDER_PAD_LEFT = theme.volume_slider_pad_left_osc or 6,
+    VOLUME_SLIDER_PAD_RIGHT = theme.volume_slider_pad_right_osc or 6,
+    ICON_BG_ENABLED = theme.icon_bg_enabled_osc or false,
+    ICON_BG_COLOR = common.bgr(theme.icon_bg_color_osc or theme.surface_color or "0D1117"),
+    ICON_BG_ALPHA = theme.icon_bg_alpha_osc or "20",
+    ICON_BG_PAD_X =
+    theme.icon_bg_pad_x_osc or 25,
+    ICON_BG_HEIGHT = theme.icon_bg_height_osc or theme.icon_bg_height or 36,
+    ICON_BG_RADIUS = theme.icon_bg_radius_osc or 0,
+    ICON_BORDER_ENABLED = theme.icon_border_enabled_osc or false,
+    ICON_BORDER_COLOR = common.bgr(theme.icon_border_color_osc or "FFFFFF"),
+    ICON_BORDER_ALPHA = theme.icon_border_alpha_osc or "FF",
+    ICON_BORDER_WIDTH = theme.icon_border_width_osc or 1,
+    ICON_GROUP_BG_ENABLED = theme.icon_group_bg_enabled_osc or false,
+    ICON_GROUP_BG_COLOR = common.bgr(theme.icon_group_bg_color_osc or theme.surface_color or "0D1117"),
+    ICON_GROUP_BG_ALPHA = theme.icon_group_bg_alpha_osc or "40",
+    ICON_GROUP_BG_PADDING = theme.icon_group_bg_padding_osc or 8,
+    ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc or theme.icon_bg_height_osc or 52,
+    ICON_GROUP_BG_RADIUS = theme.icon_group_bg_radius_osc or 0,
+    ICON_GROUP_BORDER_ENABLED = theme.icon_group_border_enabled_osc or false,
+    ICON_GROUP_BORDER_COLOR = common.bgr(theme.icon_group_border_color_osc or "FFFFFF"),
+    ICON_GROUP_BORDER_ALPHA = theme.icon_group_border_alpha_osc or "FF",
+    ICON_GROUP_BORDER_WIDTH = theme.icon_group_border_width_osc or 1,
 
-local ICON_SPACING = theme.icon_spacing or 36
-local ICON_SIZE = theme.icon_size or 24
-local TIME_ITEM_WIDTH = theme.time_item_width_osc or 150
-local TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16
-local TIME_LABEL_OUTLINE_WIDTH = theme.time_label_outline_osc and (theme.time_label_outline_width_osc or 2) or 0
-local TIME_LABEL_OUTLINE_COLOR = common.bgr(theme.time_label_outline_color_osc or "000000")
-local TIME_LABEL_OUTLINE_ALPHA = theme.time_label_outline_alpha_osc or "30"
-local TIME_LABEL_SHADOW = theme.time_label_shadow_osc and 1 or 0
-local TIME_LABEL_SHADOW_X = theme.time_label_shadow_x_osc or 1
-local TIME_LABEL_SHADOW_Y = theme.time_label_shadow_y_osc or 1
-local TIME_LABEL_SHADOW_COLOR = common.bgr(theme.time_label_shadow_color_osc or "000000")
-local TIME_LABEL_SHADOW_ALPHA = theme.time_label_shadow_alpha_osc or "40"
-local VOLUME_SLIDER_WIDTH = theme.volume_slider_width_osc or 110
-local VOLUME_SLIDER_HEIGHT = theme.volume_slider_height_osc or 6
-local VOLUME_SLIDER_THUMB_WIDTH = theme.volume_slider_thumb_width_osc or 4
-local VOLUME_SLIDER_THUMB_HEIGHT = theme.volume_slider_thumb_height_osc or 12
-local VOLUME_SLIDER_RADIUS = theme.volume_slider_radius_osc or 3
-local VOLUME_SLIDER_COLOR = common.bgr(theme.volume_slider_color_osc or "FFFFFF")
-local VOLUME_SLIDER_TRACK_COLOR = common.bgr(theme.volume_slider_track_color_osc or "444444")
-local VOLUME_SLIDER_MUTE = theme.volume_slider_mute_osc ~= false
-local VOLUME_SLIDER_MUTE_WIDTH = theme.volume_slider_mute_width_osc or ICON_SIZE
-local VOLUME_SLIDER_MUTE_GAP = theme.volume_slider_mute_gap_osc or 8
-local VOLUME_SLIDER_PAD_LEFT = theme.volume_slider_pad_left_osc or 6
-local VOLUME_SLIDER_PAD_RIGHT = theme.volume_slider_pad_right_osc or 6
-local ICON_BG_ENABLED = theme.icon_bg_enabled_osc or false
-local ICON_BG_COLOR = common.bgr(theme.icon_bg_color_osc or theme.surface_color or "0D1117")
-local ICON_BG_ALPHA = theme.icon_bg_alpha_osc or "20"
-local ICON_BG_PAD_X =
-    theme.icon_bg_pad_x_osc or math.max(0, ((theme.icon_bg_width_osc or ICON_SIZE + 12) - ICON_SIZE) / 2)
-local ICON_BG_HEIGHT = theme.icon_bg_height_osc or theme.icon_bg_height or ICON_SIZE + 12
-local ICON_BG_RADIUS = theme.icon_bg_radius_osc or 0
-local ICON_BORDER_ENABLED = theme.icon_border_enabled_osc or false
-local ICON_BORDER_COLOR = common.bgr(theme.icon_border_color_osc or "FFFFFF")
-local ICON_BORDER_ALPHA = theme.icon_border_alpha_osc or "FF"
-local ICON_BORDER_WIDTH = theme.icon_border_width_osc or 1
-local ICON_GROUP_BG_ENABLED = theme.icon_group_bg_enabled_osc or false
-local ICON_GROUP_BG_COLOR = common.bgr(theme.icon_group_bg_color_osc or theme.surface_color or "0D1117")
-local ICON_GROUP_BG_ALPHA = theme.icon_group_bg_alpha_osc or "40"
-local ICON_GROUP_BG_PADDING = theme.icon_group_bg_padding_osc or 8
-local ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc or ICON_BG_HEIGHT + 16
-local ICON_GROUP_BG_RADIUS = theme.icon_group_bg_radius_osc or 0
-local ICON_GROUP_BORDER_ENABLED = theme.icon_group_border_enabled_osc or false
-local ICON_GROUP_BORDER_COLOR = common.bgr(theme.icon_group_border_color_osc or "FFFFFF")
-local ICON_GROUP_BORDER_ALPHA = theme.icon_group_border_alpha_osc or "FF"
-local ICON_GROUP_BORDER_WIDTH = theme.icon_group_border_width_osc or 1
-
-local CHAPTER_TOOLTIP_FONT = theme.font_chapter_tooltip or theme.font_text or "Inter"
-local CHAPTER_TOOLTIP_FONT_SIZE = theme.chapter_tooltip_size or 18
-local CHAPTER_TOOLTIP_FONT_COLOR = common.bgr(theme.chapter_tooltip_text_color or "FFFFFF")
-local CHAPTER_TOOLTIP_FONT_ALPHA = theme.chapter_tooltip_text_alpha or "00"
-local CHAPTER_MARK_COLOR = common.bgr(theme.color_chapter_mark or theme.background_color or "0A0C10")
-local CHAPTER_MARK_ALPHA = theme.alpha_chapter_mark or "20"
-local CHAPTER_MARK_W = theme.chapter_mark_width or 2
-local CHAPTER_HOVER_PX = theme.chapter_hover_px or 8
-local CHAPTER_TOOLTIP_OFFSET_Y = theme.chapter_tooltip_offset_y or 36
-local CHAPTER_TOOLTIP_BG_COLOR = common.bgr(theme.chapter_tooltip_bg_color or theme.background_color or "0A0C10")
-local CHAPTER_TOOLTIP_BG_ALPHA = theme.chapter_tooltip_bg_alpha or "00"
-local CHAPTER_TOOLTIP_RADIUS = theme.chapter_tooltip_radius or 8
-local CHAPTER_TOOLTIP_PAD_X = theme.chapter_tooltip_pad_x or 8
-local CHAPTER_TOOLTIP_PAD_Y = theme.chapter_tooltip_pad_y or 10
-
+    CHAPTER_TOOLTIP_FONT = theme.font_chapter_tooltip or theme.font_text or "Inter",
+    CHAPTER_TOOLTIP_FONT_SIZE = theme.chapter_tooltip_size or 18,
+    CHAPTER_TOOLTIP_FONT_COLOR = common.bgr(theme.chapter_tooltip_text_color or "FFFFFF"),
+    CHAPTER_TOOLTIP_FONT_ALPHA = theme.chapter_tooltip_text_alpha or "00",
+    CHAPTER_MARK_COLOR = common.bgr(theme.color_chapter_mark or theme.background_color or "0A0C10"),
+    CHAPTER_MARK_ALPHA = theme.alpha_chapter_mark or "20",
+    CHAPTER_MARK_W = theme.chapter_mark_width or 2,
+    CHAPTER_HOVER_PX = theme.chapter_hover_px or 8,
+    CHAPTER_TOOLTIP_OFFSET_Y = theme.chapter_tooltip_offset_y or 36,
+    CHAPTER_TOOLTIP_BG_COLOR = common.bgr(theme.chapter_tooltip_bg_color or theme.background_color or "0A0C10"),
+    CHAPTER_TOOLTIP_BG_ALPHA = theme.chapter_tooltip_bg_alpha or "00",
+    CHAPTER_TOOLTIP_RADIUS = theme.chapter_tooltip_radius or 8,
+    CHAPTER_TOOLTIP_PAD_X = theme.chapter_tooltip_pad_x or 8,
+    CHAPTER_TOOLTIP_PAD_Y = theme.chapter_tooltip_pad_y or 10,
+}
 local ICON = {
     play = "\238\128\183", -- U+E037
     pause = "\238\128\180", -- U+E034
@@ -147,14 +148,20 @@ local ICON = {
     add_file = "\238\137\141", -- U+E24D
     add_folder = "\238\139\140", -- U+E2CC
     add_url = "\238\133\151", -- U+E157
-    subs = "\238\129\136" -- U+E048
+    subs = "\238\129\136", -- U+E048
+    settings = "\238\162\184" -- U+E8B8 (tune/sliders)
 }
 
 --------------------------------------------------------------------------------
 -- YOUTUBE CHAPTER LOADER
 --------------------------------------------------------------------------------
 
+local chapters_load_pending = false
+
 local function load_youtube_chapters()
+    if chapters_load_pending then
+        return -- Already loading
+    end
     local path = mp.get_property("path")
     if not path then
         return
@@ -162,42 +169,52 @@ local function load_youtube_chapters()
     if not (path:find("youtube%.com") or path:find("youtu%.be")) then
         return
     end
-
-    local res =
-        mp.command_native(
+    chapters_load_pending = true
+    mp.command_native_async(
         {
             name = "subprocess",
             playback_only = false,
             capture_stdout = true,
             args = {"yt-dlp", "-J", "--no-warnings", "--quiet", path}
-        }
-    )
-
-    if res and res.status == 0 and res.stdout then
-        local json = utils.parse_json(res.stdout)
-        if json and json.chapters then
-            local yt_chapters = {}
-            for i, ch in ipairs(json.chapters) do
-                yt_chapters[#yt_chapters + 1] = {
-                    time = ch.start_time,
-                    title = ch.title or ("Chapter " .. i)
-                }
+        },
+        function(success, result)
+            chapters_load_pending = false
+            if not success or not result or result.status ~= 0 or not result.stdout then
+                msg.warn("yt-dlp failed or returned no data")
+                return
             end
-            if #yt_chapters > 0 then
-                mp.set_property_native("chapter-list", yt_chapters)
+            local json = utils.parse_json(result.stdout)
+            if json and json.chapters then
+                local yt_chapters = {}
+                for i, ch in ipairs(json.chapters) do
+                    yt_chapters[#yt_chapters + 1] = {
+                        time = ch.start_time,
+                        title = ch.title or ("Chapter " .. i)
+                    }
+                end
+                if #yt_chapters > 0 then
+                    mp.set_property_native("chapter-list", yt_chapters)
+                end
             end
         end
-    end
+    )
 end
 
-mp.register_event("file-loaded", load_youtube_chapters)
+mp.register_script_message("load-chapters-if-needed", function()
+    local existing = mp.get_property_native("chapter-list", {})
+    if #existing == 0 then
+        load_youtube_chapters()
+    end
+end)
 
 --------------------------------------------------------------------------------
 -- STATE
 --------------------------------------------------------------------------------
 
 local osd = mp.create_osd_overlay("ass-events")
-local screen_w, screen_h = 1280, 720
+local screen_w, screen_h = mp.get_osd_size()
+osd.res_x = screen_w
+osd.res_y = screen_h
 local mouse_x, mouse_y = -1, -1
 
 local bar_visible = true
@@ -211,18 +228,23 @@ local volume = 100
 
 local volume_popup_open = false
 local add_menu_open = false
-local subtitle_menu_open = false
+local settings_menu_open = false
 local volume_dragging = false
 local volume_slider_dragging = false
 local seek_dragging = false
 local hitboxes = {}
 local popup_geo = nil
 local add_menu_geo = nil
-local subtitle_menu_geo = nil
+local settings_menu_geo = nil
 local chapters = {}
 local hovered_chapter = nil
-local subtitle_menu_scroll = 0
-local subtitle_menu_max_scroll = 0
+local settings_menu_scroll = 0
+local settings_menu_max_scroll = 0
+local last_subtitle_sid = nil
+local last_osc_hover = nil
+local settings_track_list_mode = nil
+local settings_active_tab = nil
+local render_timer = nil
 
 --------------------------------------------------------------------------------
 -- HELPERS
@@ -254,7 +276,7 @@ local function point_in(px, py, b)
     return common.point_in(px, py, b)
 end
 local function draw_icon(ass, glyph, cx, cy, size, color, alpha)
-    common.draw_icon(ass, ICON_FONT, glyph, cx, cy, size, color, alpha)
+    common.draw_icon(ass, cfg.ICON_FONT, glyph, cx, cy, size, color, alpha)
 end
 
 local function draw_time_label(ass, text, x, y, align)
@@ -266,47 +288,48 @@ local function draw_time_label(ass, text, x, y, align)
             x,
             y,
             align,
-            UI_FONT,
-            FONT_SIZE,
-            TEXT,
-            TIME_LABEL_OUTLINE_COLOR,
-            TIME_LABEL_OUTLINE_ALPHA,
-            TIME_LABEL_OUTLINE_WIDTH,
-            TIME_LABEL_SHADOW,
-            TIME_LABEL_SHADOW_X,
-            TIME_LABEL_SHADOW_Y,
-            TIME_LABEL_SHADOW_COLOR,
-            TIME_LABEL_SHADOW_ALPHA,
+            cfg.UI_FONT,
+            cfg.FONT_SIZE,
+            cfg.TEXT,
+            cfg.TIME_LABEL_OUTLINE_COLOR,
+            cfg.TIME_LABEL_OUTLINE_ALPHA,
+            cfg.TIME_LABEL_OUTLINE_WIDTH,
+            cfg.TIME_LABEL_SHADOW,
+            cfg.TIME_LABEL_SHADOW_X,
+            cfg.TIME_LABEL_SHADOW_Y,
+            cfg.TIME_LABEL_SHADOW_COLOR,
+            cfg.TIME_LABEL_SHADOW_ALPHA,
             text
         )
     )
 end
 
 local function draw_volume_slider(ass, x, y)
-    local slider_width = VOLUME_SLIDER_WIDTH
+    local slider_width = cfg.VOLUME_SLIDER_WIDTH
 
     local slider_x1
 
-    if VOLUME_SLIDER_MUTE then
-        local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+    if cfg.VOLUME_SLIDER_MUTE then
+        local mute_width = cfg.VOLUME_SLIDER_MUTE_WIDTH
         local total_item_width =
-            mute_width + VOLUME_SLIDER_MUTE_GAP + slider_width + VOLUME_SLIDER_PAD_LEFT + VOLUME_SLIDER_PAD_RIGHT
+            mute_width + cfg.VOLUME_SLIDER_MUTE_GAP + slider_width +
+			cfg.VOLUME_SLIDER_PAD_LEFT + cfg.VOLUME_SLIDER_PAD_RIGHT
 
-        local mute_x = x - total_item_width / 2 + mute_width / 2 + VOLUME_SLIDER_PAD_LEFT
+        local mute_x = x - total_item_width / 2 + mute_width / 2 + cfg.VOLUME_SLIDER_PAD_LEFT
 
-        draw_icon(ass, muted and ICON.volume_off or ICON.volume_up, mute_x, y, ICON_SIZE, ICON_COLOR, "00")
+        draw_icon(ass, muted and ICON.volume_off or ICON.volume_up, mute_x, y, cfg.ICON_SIZE, cfg.ICON_COLOR, "00")
 
-        slider_x1 = x + total_item_width / 2 - slider_width - VOLUME_SLIDER_PAD_RIGHT
+        slider_x1 = x + total_item_width / 2 - slider_width - cfg.VOLUME_SLIDER_PAD_RIGHT
     else
-        local total_item_width = slider_width + VOLUME_SLIDER_PAD_LEFT + VOLUME_SLIDER_PAD_RIGHT
+        local total_item_width = slider_width + cfg.VOLUME_SLIDER_PAD_LEFT + cfg.VOLUME_SLIDER_PAD_RIGHT
 
-        slider_x1 = x - total_item_width / 2 + VOLUME_SLIDER_PAD_LEFT
+        slider_x1 = x - total_item_width / 2 + cfg.VOLUME_SLIDER_PAD_LEFT
     end
 
     local slider_x2 = slider_x1 + slider_width
 
-    local track_y1 = y - VOLUME_SLIDER_HEIGHT / 2
-    local track_y2 = y + VOLUME_SLIDER_HEIGHT / 2
+    local track_y1 = y - cfg.VOLUME_SLIDER_HEIGHT / 2
+    local track_y2 = y + cfg.VOLUME_SLIDER_HEIGHT / 2
 
     local ratio = math.min(1, math.max(0, volume / 100))
     local thumb_x = slider_x1 + (slider_x2 - slider_x1) * ratio
@@ -317,40 +340,41 @@ local function draw_volume_slider(ass, x, y)
         track_y1,
         slider_x2,
         track_y2,
-        VOLUME_SLIDER_RADIUS,
-        VOLUME_SLIDER_TRACK_COLOR,
+        cfg.VOLUME_SLIDER_RADIUS,
+        cfg.VOLUME_SLIDER_TRACK_COLOR,
         "00"
     )
 
     if thumb_x > slider_x1 then
-        common.draw_rrect(ass, slider_x1, track_y1, thumb_x, track_y2, VOLUME_SLIDER_RADIUS, VOLUME_SLIDER_COLOR, "00")
+        common.draw_rrect(ass, slider_x1, track_y1, thumb_x,
+		track_y2, cfg.VOLUME_SLIDER_RADIUS, cfg.VOLUME_SLIDER_COLOR, "00")
     end
 
     common.draw_rrect(
         ass,
-        thumb_x - VOLUME_SLIDER_THUMB_WIDTH,
-        y - VOLUME_SLIDER_THUMB_HEIGHT,
-        thumb_x + VOLUME_SLIDER_THUMB_WIDTH,
-        y + VOLUME_SLIDER_THUMB_HEIGHT,
-        VOLUME_SLIDER_THUMB_WIDTH,
-        VOLUME_SLIDER_COLOR,
+        thumb_x - cfg.VOLUME_SLIDER_THUMB_WIDTH,
+        y - cfg.VOLUME_SLIDER_THUMB_HEIGHT,
+        thumb_x + cfg.VOLUME_SLIDER_THUMB_WIDTH,
+        y + cfg.VOLUME_SLIDER_THUMB_HEIGHT,
+        cfg.VOLUME_SLIDER_THUMB_WIDTH,
+        cfg.VOLUME_SLIDER_COLOR,
         "00"
     )
 end
 
 local function draw_item_background(ass, cx, cy, content_w)
-    if not ICON_BG_ENABLED then
+    if not cfg.ICON_BG_ENABLED then
         return
     end
     common.draw_rrect(
         ass,
-        cx - (content_w / 2 + ICON_BG_PAD_X),
-        cy - ICON_BG_HEIGHT / 2,
-        cx + (content_w / 2 + ICON_BG_PAD_X),
-        cy + ICON_BG_HEIGHT / 2,
-        ICON_BG_RADIUS,
-        ICON_BG_COLOR,
-        ICON_BG_ALPHA
+        cx - (content_w / 2 + cfg.ICON_BG_PAD_X),
+        cy - cfg.ICON_BG_HEIGHT / 2,
+        cx + (content_w / 2 + cfg.ICON_BG_PAD_X),
+        cy + cfg.ICON_BG_HEIGHT / 2,
+        cfg.ICON_BG_RADIUS,
+        cfg.ICON_BG_COLOR,
+        cfg.ICON_BG_ALPHA
     )
 end
 
@@ -366,42 +390,43 @@ local function draw_rrect_outline(ass, x1, y1, x2, y2, radius, color, alpha, wid
 end
 
 local function draw_item_border(ass, cx, cy, content_w)
-    if not ICON_BORDER_ENABLED then
+    if not cfg.ICON_BORDER_ENABLED then
         return
     end
-    local x1 = cx - (content_w / 2 + ICON_BG_PAD_X)
-    local x2 = cx + (content_w / 2 + ICON_BG_PAD_X)
-    local y1 = cy - ICON_BG_HEIGHT / 2
-    local y2 = cy + ICON_BG_HEIGHT / 2
-    draw_rrect_outline(ass, x1, y1, x2, y2, ICON_BG_RADIUS, ICON_BORDER_COLOR, ICON_BORDER_ALPHA, ICON_BORDER_WIDTH)
+    local x1 = cx - (content_w / 2 + cfg.ICON_BG_PAD_X)
+    local x2 = cx + (content_w / 2 + cfg.ICON_BG_PAD_X)
+    local y1 = cy - cfg.ICON_BG_HEIGHT / 2
+    local y2 = cy + cfg.ICON_BG_HEIGHT / 2
+    draw_rrect_outline(ass, x1, y1, x2, y2, cfg.ICON_BG_RADIUS,
+	cfg.ICON_BORDER_COLOR, cfg.ICON_BORDER_ALPHA, cfg.ICON_BORDER_WIDTH)
 end
 
 local function draw_icon_group_background(ass, buttons, row_y)
-    if not ICON_GROUP_BG_ENABLED or #buttons == 0 then
+    if not cfg.ICON_GROUP_BG_ENABLED or #buttons == 0 then
         return
     end
     local x1 = math.huge
     local x2 = -math.huge
     for _, button in ipairs(buttons) do
-        x1 = math.min(x1, button.x - button.width / 2 - ICON_BG_PAD_X)
-        x2 = math.max(x2, button.x + button.width / 2 + ICON_BG_PAD_X)
+        x1 = math.min(x1, button.x - button.width / 2 - cfg.ICON_BG_PAD_X)
+        x2 = math.max(x2, button.x + button.width / 2 + cfg.ICON_BG_PAD_X)
     end
-    x1 = x1 - ICON_GROUP_BG_PADDING
-    x2 = x2 + ICON_GROUP_BG_PADDING
-    local y1 = row_y - ICON_GROUP_BG_HEIGHT / 2
-    local y2 = row_y + ICON_GROUP_BG_HEIGHT / 2
-    common.draw_rrect(ass, x1, y1, x2, y2, ICON_GROUP_BG_RADIUS, ICON_GROUP_BG_COLOR, ICON_GROUP_BG_ALPHA)
-    if ICON_GROUP_BORDER_ENABLED then
+    x1 = x1 - cfg.ICON_GROUP_BG_PADDING
+    x2 = x2 + cfg.ICON_GROUP_BG_PADDING
+    local y1 = row_y - cfg.ICON_GROUP_BG_HEIGHT / 2
+    local y2 = row_y + cfg.ICON_GROUP_BG_HEIGHT / 2
+    common.draw_rrect(ass, x1, y1, x2, y2, cfg.ICON_GROUP_BG_RADIUS, cfg.ICON_GROUP_BG_COLOR, cfg.ICON_GROUP_BG_ALPHA)
+    if cfg.ICON_GROUP_BORDER_ENABLED then
         draw_rrect_outline(
             ass,
             x1,
             y1,
             x2,
             y2,
-            ICON_GROUP_BG_RADIUS,
-            ICON_GROUP_BORDER_COLOR,
-            ICON_GROUP_BORDER_ALPHA,
-            ICON_GROUP_BORDER_WIDTH
+            cfg.ICON_GROUP_BG_RADIUS,
+            cfg.ICON_GROUP_BORDER_COLOR,
+            cfg.ICON_GROUP_BORDER_ALPHA,
+            cfg.ICON_GROUP_BORDER_WIDTH
         )
     end
 end
@@ -421,7 +446,7 @@ end
 local DEFAULT_BUTTON_LAYOUT = {
     left = {"prev", "play", "next", "stop"},
     center = {},
-    right = {"volume", "add", "subtitle", "fullscreen", "playlist"}
+    right = {"volume", "add", "settings", "subtitle", "fullscreen", "playlist"}
 }
 
 local function configured_button_layout()
@@ -457,21 +482,22 @@ end
 local function get_volume_slider_geometry(button)
     local slider_x1
 
-    if VOLUME_SLIDER_MUTE then
-        local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+    if cfg.VOLUME_SLIDER_MUTE then
+        local mute_width = cfg.VOLUME_SLIDER_MUTE_WIDTH
         local total_item_width =
-            mute_width + VOLUME_SLIDER_MUTE_GAP + VOLUME_SLIDER_WIDTH + VOLUME_SLIDER_PAD_LEFT + VOLUME_SLIDER_PAD_RIGHT
+            mute_width + cfg.VOLUME_SLIDER_MUTE_GAP + cfg.VOLUME_SLIDER_WIDTH +
+			cfg.VOLUME_SLIDER_PAD_LEFT + cfg.VOLUME_SLIDER_PAD_RIGHT
 
-        slider_x1 = button.x + total_item_width / 2 - VOLUME_SLIDER_WIDTH - VOLUME_SLIDER_PAD_RIGHT
+        slider_x1 = button.x + total_item_width / 2 - cfg.VOLUME_SLIDER_WIDTH - cfg.VOLUME_SLIDER_PAD_RIGHT
     else
-        local total_item_width = VOLUME_SLIDER_WIDTH + VOLUME_SLIDER_PAD_LEFT + VOLUME_SLIDER_PAD_RIGHT
+        local total_item_width = cfg.VOLUME_SLIDER_WIDTH + cfg.VOLUME_SLIDER_PAD_LEFT + cfg.VOLUME_SLIDER_PAD_RIGHT
 
-        slider_x1 = button.x - total_item_width / 2 + VOLUME_SLIDER_PAD_LEFT
+        slider_x1 = button.x - total_item_width / 2 + cfg.VOLUME_SLIDER_PAD_LEFT
     end
 
     return {
         slider_x1 = slider_x1,
-        slider_x2 = slider_x1 + VOLUME_SLIDER_WIDTH
+        slider_x2 = slider_x1 + cfg.VOLUME_SLIDER_WIDTH
     }
 end
 
@@ -492,6 +518,38 @@ local function set_volume_from_x(px, button)
     ratio = math.min(1, math.max(0, ratio))
 
     mp.set_property_number("volume", ratio * 100)
+end
+
+
+local function get_subtitle_tracks()
+    local all_tracks = mp.get_property_native("track-list", {})
+    local tracks = {}
+    for _, track in ipairs(all_tracks) do
+        if track.type == "sub" then
+            tracks[#tracks + 1] = track
+        end
+    end
+    return tracks
+end
+
+local function subtitle_track_text(track, index)
+    local title = track.title
+    local language = track.lang
+    if title and title ~= "" then
+        return title, language
+    end
+    if language and language ~= "" then
+        return language, nil
+    end
+    if track["external-filename"] and track["external-filename"] ~= "" then
+        local filename = track["external-filename"]
+        filename = filename:match("([^/\\]+)$") or filename
+        filename = filename:gsub("%.[^%.]+$", "")
+        if filename ~= "" then
+            return filename, nil
+        end
+    end
+    return "Track " .. tostring(index), nil
 end
 
 local BUTTONS = {
@@ -595,15 +653,57 @@ local BUTTONS = {
         end
     },
     subtitle = {
-        icon = function()
+        icon = ICON.subs,
+
+        alpha = function()
             local sid = mp.get_property_native("sid")
-            local has_sub = sid ~= nil and sid ~= "no" and type(sid) == "number"
-            return has_sub and ICON.subs or ICON.subs
+            local visible = mp.get_property_bool("sub-visibility", true)
+            if sid == nil or sid == "no" then
+                return "60"
+            end
+            for _, track in ipairs(mp.get_property_native("track-list", {})) do
+                if track.type == "sub" and track.id == sid then
+                    return visible and "00" or "60"
+                end
+            end
+            return "60"
         end,
         click = function()
-            subtitle_menu_open = not subtitle_menu_open
+            local sid = mp.get_property_native("sid")
+            local has_selected_track = sid ~= nil and sid ~= "no"
+            if has_selected_track then
+                mp.commandv("cycle", "sub-visibility")
+                return
+            end
+            if last_subtitle_sid ~= nil then
+                for _, track in ipairs(get_subtitle_tracks()) do
+                    if track.id == last_subtitle_sid then
+                        mp.set_property_number("sid", last_subtitle_sid)
+                        mp.set_property_bool("sub-visibility", true)
+                        return
+                    end
+                end
+            end
+            local tracks = get_subtitle_tracks()
+            if #tracks == 0 then
+                return
+            end
+            last_subtitle_sid = tracks[1].id
+            mp.set_property_number("sid", last_subtitle_sid)
+            mp.set_property_bool("sub-visibility", true)
+        end
+    },
+    settings = {
+        icon = ICON.settings,
+        click = function()
+            settings_menu_open = not settings_menu_open
             volume_popup_open = false
             add_menu_open = false
+
+            if settings_menu_open then
+                settings_active_tab = "video"
+                settings_menu_scroll = 0
+            end
         end
     }
 }
@@ -643,8 +743,8 @@ local function draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, seek_y, track_h, d
     for _, c in ipairs(chapters) do
         if c.time > 0 and c.time < dur then
             local cx = ratio_to_x(bar_x1, bar_w, c.time / dur)
-            local mx1 = math.max(bar_x1, cx - CHAPTER_MARK_W)
-            local mx2 = math.min(bar_x2, cx + CHAPTER_MARK_W)
+            local mx1 = math.max(bar_x1, cx - cfg.CHAPTER_MARK_W)
+            local mx2 = math.min(bar_x2, cx + cfg.CHAPTER_MARK_W)
             if mx2 > mx1 then
                 common.draw_rrect(
                     ass,
@@ -653,8 +753,8 @@ local function draw_chapter_marks(ass, bar_x1, bar_x2, bar_w, seek_y, track_h, d
                     mx2,
                     seek_y + half_h,
                     0,
-                    CHAPTER_MARK_COLOR,
-                    CHAPTER_MARK_ALPHA
+                    cfg.CHAPTER_MARK_COLOR,
+                    cfg.CHAPTER_MARK_ALPHA
                 )
             end
         end
@@ -668,7 +768,7 @@ local function find_hovered_chapter(bar_x1, bar_w, dur, px)
     for _, c in ipairs(chapters) do
         if c.time > 0 and c.time < dur then
             local cx = ratio_to_x(bar_x1, bar_w, c.time / dur)
-            if math.abs(px - cx) <= CHAPTER_HOVER_PX then
+            if math.abs(px - cx) <= cfg.CHAPTER_HOVER_PX then
                 return c
             end
         end
@@ -678,24 +778,25 @@ end
 
 local function button_dimensions(id)
     if id == "time" then
-        return TIME_ITEM_WIDTH, FONT_SIZE
+        return cfg.TIME_ITEM_WIDTH, cfg.FONT_SIZE
     end
 
     if id == "volume_slider" then
-        local width = VOLUME_SLIDER_WIDTH + VOLUME_SLIDER_PAD_LEFT + VOLUME_SLIDER_PAD_RIGHT
+        local width = cfg.VOLUME_SLIDER_WIDTH + cfg.VOLUME_SLIDER_PAD_LEFT + cfg.VOLUME_SLIDER_PAD_RIGHT
 
-        if VOLUME_SLIDER_MUTE then
+        if cfg.VOLUME_SLIDER_MUTE then
             width =
-                VOLUME_SLIDER_MUTE_WIDTH + VOLUME_SLIDER_MUTE_GAP + VOLUME_SLIDER_WIDTH + VOLUME_SLIDER_PAD_LEFT +
-                VOLUME_SLIDER_PAD_RIGHT
+                cfg.VOLUME_SLIDER_MUTE_WIDTH + cfg.VOLUME_SLIDER_MUTE_GAP +
+				cfg.VOLUME_SLIDER_WIDTH + cfg.VOLUME_SLIDER_PAD_LEFT +
+                cfg.VOLUME_SLIDER_PAD_RIGHT
         end
 
-        local height = math.max(VOLUME_SLIDER_HEIGHT, VOLUME_SLIDER_THUMB_HEIGHT, ICON_SIZE)
+        local height = math.max(cfg.VOLUME_SLIDER_HEIGHT, cfg.VOLUME_SLIDER_THUMB_HEIGHT, cfg.ICON_SIZE)
 
         return width, height
     end
 
-    return ICON_SIZE, ICON_SIZE
+    return cfg.ICON_SIZE, cfg.ICON_SIZE
 end
 
 --------------------------------------------------------------------------------
@@ -703,8 +804,8 @@ end
 --------------------------------------------------------------------------------
 
 local function get_layout()
-    local natural_x1 = BAR_SIDE_INSET
-    local natural_x2 = screen_w - BAR_SIDE_INSET
+    local natural_x1 = cfg.BAR_SIDE_INSET
+    local natural_x2 = screen_w - cfg.BAR_SIDE_INSET
     local natural_w = natural_x2 - natural_x1
     local BAR_MAX_WIDTH = theme.max_bar_width_osc or screen_w
 
@@ -719,23 +820,23 @@ local function get_layout()
     end
 
     local pill_y1, pill_y2
-    if BAR_Y_ANCHOR == "top" then
-        pill_y1 = BAR_TOP_INSET
-        pill_y2 = pill_y1 + BAR_HEIGHT
-    elseif BAR_Y_ANCHOR == "center" then
-        pill_y1 = (screen_h - BAR_HEIGHT) / 2
-        pill_y2 = pill_y1 + BAR_HEIGHT
+    if cfg.BAR_Y_ANCHOR == "top" then
+        pill_y1 = cfg.BAR_TOP_INSET
+        pill_y2 = pill_y1 + cfg.BAR_HEIGHT
+    elseif cfg.BAR_Y_ANCHOR == "center" then
+        pill_y1 = (screen_h - cfg.BAR_HEIGHT) / 2
+        pill_y2 = pill_y1 + cfg.BAR_HEIGHT
     else
-        pill_y2 = screen_h - BAR_BOTTOM_INSET
-        pill_y1 = pill_y2 - BAR_HEIGHT
+        pill_y2 = screen_h - cfg.BAR_BOTTOM_INSET
+        pill_y1 = pill_y2 - cfg.BAR_HEIGHT
     end
 
-    local seek_y = pill_y1 + SEEK_Y_OFFSET
-    local row_y = BUTTON_Y_ANCHOR == "bottom" and pill_y2 - BUTTON_ROW_OFFSET or pill_y1 + BUTTON_ROW_OFFSET
-    local spacing = ICON_SPACING
+    local seek_y = pill_y1 + cfg.SEEK_Y_OFFSET
+    local row_y = cfg.BUTTON_Y_ANCHOR == "bottom" and pill_y2 - cfg.BUTTON_ROW_OFFSET or pill_y1 + cfg.BUTTON_ROW_OFFSET
+    local spacing = cfg.ICON_SPACING
 
-    local seek_x1, seek_x2 = pill_x1 + SEEK_SIDE_INSET, pill_x2 - SEEK_SIDE_INSET
-    local button_x1, button_x2 = pill_x1 + BUTTON_LEFT_INSET, pill_x2 - BUTTON_RIGHT_INSET
+    local seek_x1, seek_x2 = pill_x1 + cfg.SEEK_SIDE_INSET, pill_x2 - cfg.SEEK_SIDE_INSET
+    local button_x1, button_x2 = pill_x1 + cfg.BUTTON_LEFT_INSET, pill_x2 - cfg.BUTTON_RIGHT_INSET
 
     local button_layout, has_named_button = configured_button_layout()
     local positions = {left = {}, center = {}, right = {}, by_id = {}}
@@ -755,7 +856,7 @@ local function get_layout()
     local function place_group(group, first_edge, direction)
         local ids = valid_group_buttons(group)
         local cursor = first_edge
-        local gap = math.max(0, spacing - ICON_SIZE)
+        local gap = math.max(0, spacing - cfg.ICON_SIZE)
         for index = 1, #ids do
             local id = direction < 0 and ids[#ids - index + 1] or ids[index]
             local width, height = button_dimensions(id)
@@ -777,7 +878,7 @@ local function get_layout()
 
         local center_ids = valid_group_buttons("center")
         local center_width = 0
-        local center_gap = math.max(0, spacing - ICON_SIZE)
+        local center_gap = math.max(0, spacing - cfg.ICON_SIZE)
         for _, id in ipairs(center_ids) do
             local width = button_dimensions(id)
             center_width = center_width + width
@@ -837,10 +938,10 @@ local function compute_popup_geo(L)
 end
 
 local function render_volume_popup(ass, geo)
-    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, "10")
+    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, cfg.BARBG, "10")
 
     ass:new_event()
-    ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H00&\\bord0\\shad0}", SLIDER_RAIL))
+    ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H00&\\bord0\\shad0}", cfg.SLIDER_RAIL))
     ass:draw_start()
     ass:round_rect_cw(geo.cx - 2, geo.track_y1, geo.cx + 2, geo.track_y2, 2)
     ass:draw_stop()
@@ -848,7 +949,7 @@ local function render_volume_popup(ass, geo)
     local vol_ratio = math.min(1, math.max(0, volume / 100))
     local fill_y1 = geo.track_y2 - (geo.track_y2 - geo.track_y1) * vol_ratio
 
-    common.draw_rrect(ass, geo.cx - 2, fill_y1, geo.cx + 2, geo.track_y2, 2, TRACK_FG, "00")
+    common.draw_rrect(ass, geo.cx - 2, fill_y1, geo.cx + 2, geo.track_y2, 2, cfg.TRACK_FG, "00")
 
     ass:new_event()
     ass:append("{\\pos(0,0)\\an7\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0}")
@@ -856,7 +957,7 @@ local function render_volume_popup(ass, geo)
     ass:round_rect_cw(geo.cx - 6, fill_y1 - 6, geo.cx + 6, fill_y1 + 6, 6)
     ass:draw_stop()
 
-    common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 38, FONT_SIZE, TEXT, "10", 2, false)
+    common.draw_text(ass, math.floor(volume) .. "%", geo.cx, geo.card_y2 - 38, cfg.FONT_SIZE, cfg.TEXT, "10", 2, false)
 
     draw_icon(
         ass,
@@ -864,7 +965,7 @@ local function render_volume_popup(ass, geo)
         geo.cx,
         geo.mute_y,
         18,
-        ICON_COLOR,
+        cfg.ICON_COLOR,
         muted and "00" or "40"
     )
 
@@ -918,7 +1019,7 @@ local function compute_add_menu_geo(L)
 end
 
 local function render_add_menu(ass, geo)
-    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, BARBG, "10")
+    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, 10, cfg.BARBG, "10")
 
     local entries = {
         {label = "Add file", icon = ICON.add_file, cb = common.do_add_file},
@@ -930,8 +1031,8 @@ local function render_add_menu(ass, geo)
         local row_y1 = geo.card_y1 + 6 + (i - 1) * geo.row_h
         local row_y2 = row_y1 + geo.row_h
         local mid_y = (row_y1 + row_y2) / 2
-        draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, ICON_COLOR, ICON_DIM_A)
-        common.draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, TEXT, "00", 4, false)
+        draw_icon(ass, e.icon, geo.card_x1 + 24, mid_y, 16, cfg.ICON_COLOR, cfg.ICON_DIM_A)
+        common.draw_text(ass, e.label, geo.card_x1 + 42, mid_y, 16, cfg.TEXT, "00", 4, false)
         add_hitbox(
             "add_menu_" .. i,
             geo.card_x1,
@@ -947,522 +1048,872 @@ local function render_add_menu(ass, geo)
 end
 
 --------------------------------------------------------------------------------
--- SUBTITLE SETTINGS DIALOG
+-- UNIFIED SETTINGS DIALOG
 --------------------------------------------------------------------------------
 
-local SUB_MENU_WIDTH = 360
-local SUB_MENU_HEIGHT = 450
-local SUB_MENU_PADDING = 16
-local SUB_MENU_RADIUS = 12
+local SET_MENU_WIDTH   = 380
+local SET_MENU_HEIGHT  = 500
+local SET_MENU_PAD     = 18
+local SET_MENU_RADIUS  = 14
+local SET_MENU_ROW_H   = 38
+local SET_MENU_HEADER_H = 52
+local SET_MENU_TAB_H   = 40
+local SET_MENU_FOOTER_H = 46
+local SET_MENU_SECTION_TITLE_H = 30
 
-local SUB_MENU_HEADER_H = 48
-local SUB_MENU_SETTINGS_H = 196
-local SUB_MENU_TRACKS_TITLE_H = 30
-local SUB_MENU_FOOTER_H = 42
-local SUB_MENU_ROW_H = 34
-
-local function get_subtitle_tracks()
-    local all_tracks = mp.get_property_native("track-list", {})
-    local tracks = {}
-
-    for _, track in ipairs(all_tracks) do
-        if track.type == "sub" then
-            tracks[#tracks + 1] = track
-        end
-    end
-
-    return tracks
-end
-
-local function subtitle_track_text(track, index)
-    local title = track.title
-    local language = track.lang
-
-    if title and title ~= "" then
-        return title, language
-    end
-
-    if language and language ~= "" then
-        return language, nil
-    end
-
-    if track["external-filename"] and track["external-filename"] ~= "" then
-        local filename = track["external-filename"]
-
-        -- Keep only the filename, removing the directory portion.
-        filename = filename:match("([^/\\]+)$") or filename
-
-        -- Remove the final extension: .srt, .ass, .vtt, etc.
-        filename = filename:gsub("%.[^%.]+$", "")
-
-        if filename ~= "" then
-            return filename, nil
-        end
-    end
-
-    return "Track " .. tostring(index), nil
-end
-
-local function truncate_subtitle_text(text, max_chars)
-    if not text or text == "" then
-        return ""
-    end
-    if #text <= max_chars then
-        return text
-    end
-    return text:sub(1, max_chars - 1) .. "…"
-end
-
-local function compute_subtitle_menu_geo()
-    local screen_margin = 18
-
-    local card_w = math.min(SUB_MENU_WIDTH, screen_w - screen_margin * 2)
-
-    local card_h = math.min(SUB_MENU_HEIGHT, screen_h - screen_margin * 2)
-
-    -- The dialog is deliberately centered. It does not cover a specific OSC
-    -- button or collide with the playlist button on the bottom bar.
+-- Compute the geometry for the unified settings panel.
+local function compute_settings_menu_geo()
+    local margin = 20
+    local card_w = math.min(SET_MENU_WIDTH, screen_w - margin * 2)
+    local card_h = math.min(SET_MENU_HEIGHT, screen_h - margin * 2)
     local card_x1 = math.floor((screen_w - card_w) / 2)
     local card_y1 = math.floor((screen_h - card_h) / 2)
     local card_x2 = card_x1 + card_w
     local card_y2 = card_y1 + card_h
 
-    local content_x1 = card_x1 + SUB_MENU_PADDING
-    local content_x2 = card_x2 - SUB_MENU_PADDING
+    local cx1 = card_x1 + SET_MENU_PAD
+    local cx2 = card_x2 - SET_MENU_PAD
 
-    -- Fixed, non-scrollable sections.
     local header_y1 = card_y1
-    local header_y2 = header_y1 + SUB_MENU_HEADER_H
-
-    local settings_y1 = header_y2
-    local settings_y2 = settings_y1 + SUB_MENU_SETTINGS_H
-
-    local tracks_title_y1 = settings_y2
-    local tracks_title_y2 = tracks_title_y1 + SUB_MENU_TRACKS_TITLE_H
-
+    local header_y2 = header_y1 + SET_MENU_HEADER_H
+    local tab_y1    = header_y2
+    local tab_y2    = tab_y1 + SET_MENU_TAB_H
+    local footer_y1 = card_y2 - SET_MENU_FOOTER_H
     local footer_y2 = card_y2
-    local footer_y1 = footer_y2 - SUB_MENU_FOOTER_H
-
-    -- Only this rectangle contains the scrolling track rows.
-    local tracks_y1 = tracks_title_y2 + 2
-    local tracks_y2 = footer_y1 - 6
+    local body_y1   = tab_y2 + 4
+    local body_y2   = footer_y1 - 4
 
     return {
-        card_x1 = card_x1,
-        card_x2 = card_x2,
-        card_y1 = card_y1,
-        card_y2 = card_y2,
-        content_x1 = content_x1,
-        content_x2 = content_x2,
-        header_y1 = header_y1,
-        header_y2 = header_y2,
-        settings_y1 = settings_y1,
-        settings_y2 = settings_y2,
-        tracks_title_y1 = tracks_title_y1,
-        tracks_title_y2 = tracks_title_y2,
-        tracks_y1 = tracks_y1,
-        tracks_y2 = tracks_y2,
-        footer_y1 = footer_y1,
-        footer_y2 = footer_y2
+        card_x1 = card_x1, card_x2 = card_x2,
+        card_y1 = card_y1, card_y2 = card_y2,
+        cx1 = cx1, cx2 = cx2,
+        header_y1 = header_y1, header_y2 = header_y2,
+        tab_y1 = tab_y1, tab_y2 = tab_y2,
+        body_y1 = body_y1, body_y2 = body_y2,
+        footer_y1 = footer_y1, footer_y2 = footer_y2,
     }
 end
 
-local function draw_subtitle_separator(ass, geo, y)
-    common.draw_rrect(ass, geo.content_x1, y, geo.content_x2, y + 1, 0, TRACK_BG, "40")
+-- Thin separator line.
+local function draw_sep(ass, geo, y)
+    common.draw_rrect(ass, geo.cx1, y, geo.cx2, y + 1, 0, cfg.TRACK_BG, "50")
 end
 
-local function draw_subtitle_step_button(ass, x, y, symbol)
-    common.draw_rrect(ass, x - 13, y - 13, x + 13, y + 13, 5, TRACK_BG, "20")
-
-    common.draw_text(ass, symbol, x, y, FONT_SIZE + 1, TEXT, "00", 5, false)
+-- Small +/- stepper button.
+local function draw_step_btn(ass, x, y, symbol)
+    common.draw_rrect(ass, x - 14, y - 14, x + 14, y + 14, 7, cfg.TRACK_BG, "20")
+    common.draw_text(ass, symbol, x, y, cfg.FONT_SIZE + 1, cfg.TEXT, "00", 5, false)
 end
 
-local function draw_subtitle_setting_row(
-    ass,
-    geo,
-    row_y,
-    label,
-    value,
-    minus_name,
-    minus_callback,
-    plus_name,
-    plus_callback)
-    local row_center_y = row_y + SUB_MENU_ROW_H / 2
+-- A full label | [−] value [+] row. Returns the row bottom y.
+local function draw_step_row(ass, geo, row_y, label, value_str,
+                              minus_name, minus_cb, plus_name, plus_cb)
+    local cy        = row_y + SET_MENU_ROW_H / 2
+    local RPAD      = 16
+    local minus_x   = geo.cx2 - RPAD - 84
+    local val_x     = geo.cx2 - RPAD - 42
+    local plus_x    = geo.cx2 - RPAD - 2
 
-    -- Fixed columns: label | minus | value | plus.
-    local SETTINGS_RIGHT_PAD = 18
+    common.draw_text(ass, label,     geo.cx1, cy, cfg.FONT_SIZE - 1, cfg.TEXT, "00", 4, false)
+    draw_step_btn(ass, minus_x, cy, "−")
+    draw_step_btn(ass, plus_x,  cy, "+")
+    common.draw_text(ass, value_str, val_x,    cy, cfg.FONT_SIZE - 1, cfg.TEXT, "00", 5, false)
 
-    local minus_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 82
-    local value_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 43
-    local plus_x = geo.content_x2 - SETTINGS_RIGHT_PAD - 4
-
-    common.draw_text(ass, label, geo.content_x1, row_center_y, FONT_SIZE - 1, TEXT, "00", 4, false)
-
-    draw_subtitle_step_button(ass, minus_x, row_center_y, "−")
-    draw_subtitle_step_button(ass, plus_x, row_center_y, "+")
-
-    common.draw_text(ass, value, value_x, row_center_y, FONT_SIZE - 1, TEXT, "00", 5, false)
-
-    add_hitbox(minus_name, minus_x - 16, row_y, minus_x + 16, row_y + SUB_MENU_ROW_H, minus_callback)
-
-    add_hitbox(plus_name, plus_x - 16, row_y, plus_x + 16, row_y + SUB_MENU_ROW_H, plus_callback)
+    add_hitbox(minus_name, minus_x - 18, row_y, minus_x + 18, row_y + SET_MENU_ROW_H, minus_cb)
+    add_hitbox(plus_name,  plus_x  - 18, row_y, plus_x  + 18, row_y + SET_MENU_ROW_H, plus_cb)
 end
 
-local function draw_subtitle_track_row(ass, geo, row_y, title, language, selected, hitbox_name, callback)
-    -- Rows outside the viewport must not be drawn or clickable.
-    if row_y + SUB_MENU_ROW_H <= geo.tracks_y1 then
-        return
-    end
-    if row_y >= geo.tracks_y2 then
-        return
-    end
 
-    local visible_y1 = math.max(row_y, geo.tracks_y1)
-    local visible_y2 = math.min(row_y + SUB_MENU_ROW_H, geo.tracks_y2)
-    local center_y = row_y + SUB_MENU_ROW_H / 2
+local measure_osd = mp.create_osd_overlay("ass-events")
+    measure_osd.hidden = true
+    measure_osd.compute_bounds = true
 
-    -- Selected rows receive a subtle accent-background pill.
-    if selected then
-        common.draw_rrect(ass, geo.content_x1, visible_y1 + 2, geo.content_x2 - 10, visible_y2 - 2, 6, TRACK_FG, "D8")
-    end
+local function measure_text_width(text, font_size, font)
+    local f = font or cfg.UI_FONT
+    local osd_w, osd_h = mp.get_osd_size()
 
-    -- Deliberately text-based radio marks: no Material Icon glyph dependency.
-    common.draw_text(
-        ass,
-        selected and "●" or "○",
-        geo.content_x1 + 12,
-        center_y,
-        FONT_SIZE,
-        selected and TRACK_FG or ICON_COLOR,
-        selected and "00" or ICON_DIM_A,
-        5,
-        false
+    measure_osd.res_x = osd_w
+    measure_osd.res_y = osd_h
+
+    measure_osd.data =
+        string.format(
+        "{\\pos(1000,1000)\\an5\\fn%s\\fs%d" .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
+        f,
+        font_size,
+        text
     )
 
-    common.draw_text(
-        ass,
-        truncate_subtitle_text(title, 29),
-        geo.content_x1 + 38,
-        center_y,
-        FONT_SIZE - 1,
-        TEXT,
-        "00",
-        4,
-        false
-    )
+    local res = measure_osd:update()
 
-    -- Language is separate and right-aligned, rather than appended to title.
+    if res and res.x0 and res.x1 then
+        return res.x1 - res.x0
+    end
+
+    -- Fallback only if libass does not return bounds.
+    return utf8_char_count(text) * font_size * 0.5
+end
+
+-- Scrollable subtitle track list row.
+local function draw_subtitle_track_row(ass, geo, row_y, title, language, selected, hbname, cb)
+    local vy1 = math.max(row_y, geo.body_y1)
+    local vy2 = math.min(row_y + SET_MENU_ROW_H, geo.body_y2)
+
+    if vy2 - vy1 < SET_MENU_ROW_H then
+        return
+    end
+    local center = row_y + SET_MENU_ROW_H / 2
+
+    -- Measure how much space language will take
+    local lang_w = 0
     if language and language ~= "" then
-        common.draw_text(
-            ass,
-            truncate_subtitle_text(language, 10),
-            geo.content_x2 - 14,
-            center_y,
-            FONT_SIZE - 2,
-            TEXT,
-            "35",
-            6,
-            false
-        )
+        lang_w = measure_text_width(language, cfg.FONT_SIZE - 2, cfg.UI_FONT)
     end
 
-    add_hitbox(hitbox_name, geo.content_x1, visible_y1, geo.content_x2, visible_y2, callback)
+    local text_start = geo.cx1 + 40
+    local right_margin = 12
+    local max_title_w = math.max(20, geo.cx2 - right_margin - text_start - lang_w)
+
+    -- Width-safe truncation
+    local safe_title = title
+    if measure_text_width(title, cfg.FONT_SIZE - 1, cfg.UI_FONT) > max_title_w then
+        local lo, hi = 0, utf8_char_count(title)
+        while lo < hi do
+            local mid = math.ceil((lo + hi) / 2)
+            local cand = title:sub(1, mid) .. "…"
+            if measure_text_width(cand, cfg.FONT_SIZE - 1, cfg.UI_FONT) <= max_title_w then
+                lo = mid
+            else
+                hi = mid - 1
+            end
+        end
+        safe_title = title:sub(1, lo) .. "…"
+    end
+
+    if selected then
+        common.draw_rrect(ass, geo.cx1, vy1 + 2, geo.cx2 - 8, vy2 - 2, 6, cfg.TRACK_FG, "D0")
+    end
+
+    common.draw_text(ass, selected and "●" or "○", geo.cx1 + 14, center,
+        cfg.FONT_SIZE, selected and cfg.TRACK_FG or cfg.ICON_COLOR,
+        selected and "00" or cfg.ICON_DIM_A, 5, false)
+
+    common.draw_text(ass, safe_title, text_start, center,
+        cfg.FONT_SIZE - 1, cfg.TEXT, "00", 4, false)
+
+    if language and language ~= "" then
+        common.draw_text(ass, language, geo.cx2 - 12, center,
+            cfg.FONT_SIZE - 2, cfg.TEXT, "35", 6, false)
+    end
+
+    add_hitbox(hbname, geo.cx1, vy1, geo.cx2, vy2, cb)
 end
 
-local function render_subtitle_menu(ass, geo)
-    local sub_tracks = get_subtitle_tracks()
-    local current_sid = mp.get_property_native("sid")
-
-    --------------------------------------------------------------------------
-    -- Dialog panel: opaque enough to read over any video frame.
-    --------------------------------------------------------------------------
-
-    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, SUB_MENU_RADIUS, BARBG, "00")
-
-    draw_rrect_outline(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2, SUB_MENU_RADIUS, ICON_COLOR, "C0", 1)
-
-    --------------------------------------------------------------------------
-    -- Header: fixed.
-    --------------------------------------------------------------------------
-
+-- Section heading inside a tab body.
+local function draw_section_title(ass, geo, y, text)
     common.draw_text(
-        ass,
-        "Subtitles",
-        geo.content_x1,
-        geo.header_y1 + SUB_MENU_HEADER_H / 2,
-        FONT_SIZE + 1,
-        TEXT,
-        "00",
-        4,
-        false
+        ass, text, geo.cx1, y + SET_MENU_SECTION_TITLE_H / 2,
+        cfg.FONT_SIZE - 2, cfg.TEXT, "40", 4, false
     )
+end
 
-    common.draw_text(
-        ass,
-        "×",
-        geo.content_x2 - 4,
-        geo.header_y1 + SUB_MENU_HEADER_H / 2,
-        FONT_SIZE + 6,
-        ICON_COLOR,
-        "00",
-        5,
-        false
-    )
-
-    add_hitbox(
-        "subtitle_dialog_close",
-        geo.content_x2 - 40,
-        geo.header_y1 + 6,
-        geo.content_x2 + 4,
-        geo.header_y2 - 6,
-        function()
-            subtitle_menu_open = false
-            subtitle_menu_scroll = 0
-        end
-    )
-
-    draw_subtitle_separator(ass, geo, geo.header_y2)
-
-    --------------------------------------------------------------------------
-    -- Settings: fixed. The minus / value / plus columns never overlap.
-    --------------------------------------------------------------------------
-
-    local sub_delay = mp.get_property_number("sub-delay", 0) or 0
-    local sub_scale = mp.get_property_number("sub-scale", 1.0) or 1.0
-    local sub_pos = mp.get_property_number("sub-pos", 100) or 100
+-- Subtitles tab
+local function render_subtitles_tab(ass, geo)
+    local sub_delay   = mp.get_property_number("sub-delay",        0)    or 0
+    local sub_scale   = mp.get_property_number("sub-scale",        1.0)  or 1.0
+    local sub_pos     = mp.get_property_number("sub-pos",          100)  or 100
     local sub_outline = mp.get_property_number("sub-outline-size", 1.65) or 0
-    local sub_shadow = mp.get_property_number("sub-shadow-offset", 0) or 0
+    local sub_shadow  = mp.get_property_number("sub-shadow-offset",0)    or 0
 
-    draw_subtitle_setting_row(
-        ass,
-        geo,
-        geo.settings_y1 + 5,
-        "Delay",
-        string.format("%.1f s", sub_delay),
-        "subtitle_delay_minus",
-        function()
-            mp.commandv("add", "sub-delay", -0.1)
-        end,
-        "subtitle_delay_plus",
-        function()
-            mp.commandv("add", "sub-delay", 0.1)
-        end
+    local y = geo.body_y1 + 2
+
+    draw_step_row(ass, geo, y,
+        "Delay",   string.format("%.1f s", sub_delay),
+        "set_sub_delay_minus",  function() mp.commandv("add", "sub-delay", -0.1) end,
+        "set_sub_delay_plus",   function() mp.commandv("add", "sub-delay",  0.1) end)
+    y = y + SET_MENU_ROW_H
+
+    draw_step_row(ass, geo, y,
+        "Scale",   string.format("%d%%", math.floor(sub_scale * 100 + 0.5)),
+        "set_sub_scale_minus",  function() mp.set_property_number("sub-scale", math.max(0.5, sub_scale - 0.1)) end,
+        "set_sub_scale_plus",   function() mp.set_property_number("sub-scale", math.min(3.0, sub_scale + 0.1)) end)
+    y = y + SET_MENU_ROW_H
+
+    draw_step_row(ass, geo, y,
+        "Position", string.format("%d%%", math.floor(sub_pos + 0.5)),
+        "set_sub_pos_minus",
+        function() mp.set_property_number("sub-pos", math.max(0,   sub_pos - 1)) end,
+        "set_sub_pos_plus",
+        function() mp.set_property_number("sub-pos", math.min(150, sub_pos + 1)) end)
+    y = y + SET_MENU_ROW_H
+
+    draw_step_row(ass, geo, y,
+        "Outline",  string.format("%.2f", sub_outline),
+        "set_sub_outline_minus",
+        function() mp.set_property_number("sub-outline-size", math.max(0,  sub_outline - 0.15)) end,
+        "set_sub_outline_plus",
+        function() mp.set_property_number("sub-outline-size", math.min(10, sub_outline + 0.15)) end)
+    y = y + SET_MENU_ROW_H
+
+    draw_step_row(ass, geo, y,
+        "Shadow",   string.format("%.1f", sub_shadow),
+        "set_sub_shadow_minus",
+        function() mp.set_property_number("sub-shadow-offset", math.max(0,  sub_shadow - 0.5)) end,
+        "set_sub_shadow_plus",
+        function() mp.set_property_number("sub-shadow-offset", math.min(10, sub_shadow + 0.5)) end)
+    y = y + SET_MENU_ROW_H
+
+    draw_sep(ass, geo, y + 2)
+    y = y + 10
+
+    -- Tracks section heading
+    draw_section_title(ass, geo, y, "Tracks")
+    y = y + SET_MENU_SECTION_TITLE_H
+    draw_sep(ass, geo, y)
+    y = y + 2
+
+    -- Scrollable track list
+    local sub_tracks = get_subtitle_tracks()
+    local current_sid_native = mp.get_property_native("sid")
+    local current_sid = mp.get_property("sid")
+
+    local track_area_y1 = y
+
+    local track_area_y2 = geo.footer_y1 - 10
+
+    if track_area_y2 < track_area_y1 + SET_MENU_ROW_H then
+        track_area_y2 = track_area_y1 + SET_MENU_ROW_H
+    end
+
+    local list_h = track_area_y2 - track_area_y1
+    local visible_rows = math.max(
+        1,
+        math.floor(list_h / SET_MENU_ROW_H)
     )
-
-    draw_subtitle_setting_row(
-        ass,
-        geo,
-        geo.settings_y1 + 43,
-        "Scale",
-        string.format("%d%%", math.floor(sub_scale * 100 + 0.5)),
-        "subtitle_scale_minus",
-        function()
-            mp.set_property_number("sub-scale", math.max(0.5, sub_scale - 0.1))
-        end,
-        "subtitle_scale_plus",
-        function()
-            mp.set_property_number("sub-scale", math.min(3.0, sub_scale + 0.1))
-        end
-    )
-
-    draw_subtitle_setting_row(
-        ass,
-        geo,
-        geo.settings_y1 + 81,
-        "Position",
-        string.format("%d%%", math.floor(sub_pos + 0.5)),
-        "subtitle_pos_minus",
-        function()
-            mp.set_property_number("sub-pos", math.max(0, sub_pos - 1))
-        end,
-        "subtitle_pos_plus",
-        function()
-            mp.set_property_number("sub-pos", math.min(150, sub_pos + 1))
-        end
-    )
-
-    draw_subtitle_setting_row(
-        ass,
-        geo,
-        geo.settings_y1 + 119,
-        "Outline",
-        string.format("%.2f", sub_outline),
-        "subtitle_outline_minus",
-        function()
-            mp.set_property_number("sub-outline-size", math.max(0, sub_outline - 0.15))
-        end,
-        "subtitle_outline_plus",
-        function()
-            mp.set_property_number("sub-outline-size", math.min(10, sub_outline + 0.15))
-        end
-    )
-
-    draw_subtitle_setting_row(
-        ass,
-        geo,
-        geo.settings_y1 + 157,
-        "Shadow",
-        string.format("%.1f", sub_shadow),
-        "subtitle_shadow_minus",
-        function()
-            mp.set_property_number("sub-shadow-offset", math.max(0, sub_shadow - 0.5))
-        end,
-        "subtitle_shadow_plus",
-        function()
-            mp.set_property_number("sub-shadow-offset", math.min(10, sub_shadow + 0.5))
-        end
-    )
-
-    draw_subtitle_separator(ass, geo, geo.settings_y2)
-
-    --------------------------------------------------------------------------
-    -- Track-list heading: fixed.
-    --------------------------------------------------------------------------
-
-    common.draw_text(
-        ass,
-        "Tracks",
-        geo.content_x1,
-        geo.tracks_title_y1 + SUB_MENU_TRACKS_TITLE_H / 2,
-        FONT_SIZE - 2,
-        TEXT,
-        "25",
-        4,
-        false
-    )
-
-    draw_subtitle_separator(ass, geo, geo.tracks_title_y2)
-
-    --------------------------------------------------------------------------
-    -- Subtitle track list: scrollable viewport.
-    --
-    -- Manual row culling is intentional: common.draw_text and draw_icon make
-    -- separate ASS events, so an ASS clip would not safely apply to all rows.
-    --------------------------------------------------------------------------
-
-    local list_height = geo.tracks_y2 - geo.tracks_y1
-    local visible_rows = math.max(1, math.floor(list_height / SUB_MENU_ROW_H))
 
     local total_rows = #sub_tracks + 1
-    subtitle_menu_max_scroll = math.max(0, total_rows - visible_rows)
 
-    subtitle_menu_scroll = math.max(0, math.min(subtitle_menu_scroll, subtitle_menu_max_scroll))
+    settings_menu_max_scroll = math.max(
+        0,
+        total_rows - visible_rows
+    )
 
-    local first_row_y = geo.tracks_y1 - subtitle_menu_scroll * SUB_MENU_ROW_H
+    settings_menu_scroll = math.max(
+        0,
+        math.min(settings_menu_scroll, settings_menu_max_scroll)
+    )
 
-    local disabled = current_sid == nil or current_sid == "no"
+    local first_y = track_area_y1 - settings_menu_scroll * SET_MENU_ROW_H
+
+    local sub_geo = {
+        cx1 = geo.cx1,
+        cx2 = geo.cx2,
+        body_y1 = track_area_y1,
+        body_y2 = track_area_y2,
+    }
+
+    local disabled = (current_sid == "no")
 
     draw_subtitle_track_row(
         ass,
-        geo,
-        first_row_y,
+        sub_geo,
+        first_y,
         "Disable subtitles",
         nil,
         disabled,
-        "subtitle_disable",
+        "set_sub_disable",
         function()
             mp.set_property("sid", "no")
         end
     )
 
     for i, track in ipairs(sub_tracks) do
-        local row_y = first_row_y + i * SUB_MENU_ROW_H
+        local row_y = first_y + i * SET_MENU_ROW_H
         local title, language = subtitle_track_text(track, i)
 
         draw_subtitle_track_row(
             ass,
-            geo,
+            sub_geo,
             row_y,
             title,
             language,
-            current_sid == track.id,
-            "subtitle_track_" .. tostring(i),
+            current_sid_native == track.id,
+            "set_sub_track_" .. i,
             function()
+                last_subtitle_sid = track.id
                 mp.set_property_number("sid", track.id)
+                mp.set_property_bool("sub-visibility", true)
             end
         )
     end
 
-    --------------------------------------------------------------------------
-    -- Scrollbar: visible only when more rows exist than can fit.
-    --------------------------------------------------------------------------
+    if settings_menu_max_scroll > 0 then
+        local sb_x1 = geo.cx2 - 5
+        local sb_x2 = geo.cx2 - 2
 
-    if subtitle_menu_max_scroll > 0 then
         common.draw_rrect(
             ass,
-            geo.content_x2 - 5,
-            geo.tracks_y1 + 2,
-            geo.content_x2 - 2,
-            geo.tracks_y2 - 2,
+            sb_x1,
+            track_area_y1 + 2,
+            sb_x2,
+            track_area_y2 - 2,
             2,
-            TRACK_BG,
+            cfg.TRACK_BG,
             "30"
         )
 
-        local thumb_h = math.max(24, list_height * (visible_rows / total_rows))
+        local thumb_h = math.max(
+            20,
+            list_h * visible_rows / total_rows
+        )
 
-        local thumb_travel = list_height - thumb_h
-        local thumb_y = geo.tracks_y1 + thumb_travel * (subtitle_menu_scroll / subtitle_menu_max_scroll)
+        local thumb_y =
+            track_area_y1 +
+            (list_h - thumb_h) *
+            settings_menu_scroll / settings_menu_max_scroll
 
-        common.draw_rrect(ass, geo.content_x2 - 6, thumb_y, geo.content_x2 - 1, thumb_y + thumb_h, 3, TRACK_FG, "00")
+        common.draw_rrect(
+            ass,
+            sb_x1 - 1,
+            thumb_y,
+            sb_x2 + 1,
+            thumb_y + thumb_h,
+            3,
+            cfg.TRACK_FG,
+            "00"
+        )
+    end
+end
+
+-- Video tab
+local function render_video_tab(ass, geo)
+    if not settings_track_list_mode then
+        settings_track_list_mode = "audio"
     end
 
-    --------------------------------------------------------------------------
-    -- Footer: fixed and separate from the list.
-    --------------------------------------------------------------------------
+    local speed = mp.get_property_number("speed", 1.0) or 1.0
+    local keepasp = mp.get_property_bool("keepaspect", true)
+    local unscaled = mp.get_property("video-unscaled") or "no"
+    local aspect = mp.get_property_number("video-aspect-override", -1) or -1
 
-    draw_subtitle_separator(ass, geo, geo.footer_y1)
+    local y = geo.body_y1 + 4
 
+    -- Speed
+    draw_step_row(
+        ass,
+        geo,
+        y,
+        "Speed",
+        string.format("%.2fx", speed),
+        "set_speed_minus",
+        function()
+            mp.set_property_number("speed", math.max(0.25, speed - 0.25))
+        end,
+        "set_speed_plus",
+        function()
+            mp.set_property_number("speed", math.min(4.0, speed + 0.25))
+        end
+    )
+
+    y = y + SET_MENU_ROW_H
+    draw_sep(ass, geo, y + 2)
+    y = y + 6
+
+    -- Aspect Ratio
+    draw_section_title(ass, geo, y, "Aspect Ratio")
+    y = y + SET_MENU_SECTION_TITLE_H
+
+    local asp_choices = {
+        {label = "Auto", value = -1, current = aspect < 0},
+        {label = "4:3", value = 4 / 3, current = math.abs(aspect - 4 / 3) < 0.02},
+        {label = "16:9", value = 16 / 9, current = math.abs(aspect - 16 / 9) < 0.02},
+        {label = "2.39:1", value = 2.39, current = math.abs(aspect - 2.39) < 0.02},
+    }
+
+    local chip_w = 62
+    local chip_h = 26
+    local chip_gap = 6
+    local chip_cy = y + SET_MENU_ROW_H / 2
+    local total_w = #asp_choices * chip_w + (#asp_choices - 1) * chip_gap
+    local start_x = geo.cx2 - total_w - 14
+
+    for i, choice in ipairs(asp_choices) do
+        local cx = start_x + (i - 1) * (chip_w + chip_gap) + chip_w / 2
+        local x1 = cx - chip_w / 2
+        local x2 = cx + chip_w / 2
+        local y1 = chip_cy - chip_h / 2
+        local y2 = chip_cy + chip_h / 2
+
+        if choice.current then
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_FG, "D0")
+            common.draw_text(ass, choice.label, cx, chip_cy,
+                cfg.FONT_SIZE - 3, cfg.TEXT, "00", 5, false)
+        else
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_BG, "20")
+            common.draw_text(ass, choice.label, cx, chip_cy,
+                cfg.FONT_SIZE - 3, cfg.TEXT, "30", 5, false)
+        end
+
+        local value = choice.value
+
+        add_hitbox(
+            "set_asp_" .. i,
+            x1,
+            y,
+            x2,
+            y + SET_MENU_ROW_H,
+            function()
+                if value < 0 then
+                    mp.set_property("video-aspect-override", "-1")
+                else
+                    mp.set_property_number("video-aspect-override", value)
+                end
+            end
+        )
+    end
+
+    y = y + SET_MENU_ROW_H
+    draw_sep(ass, geo, y + 2)
+    y = y + 12
+
+    -- Display Mode
+    draw_section_title(ass, geo, y, "Display Mode")
+    y = y + SET_MENU_SECTION_TITLE_H
+
+    local is_unscaled = unscaled ~= "no" and unscaled ~= "" and unscaled ~= false
+    local is_fill = not is_unscaled and not keepasp
+    local is_normal = not is_unscaled and keepasp
+
+    local display_choices = {
+        {label = "Normal", current = is_normal},
+        {label = "Fill", current = is_fill},
+        {label = "Unscaled", current = is_unscaled},
+    }
+
+    local display_chip_w = 74
+    local display_chip_h = 26
+    local display_chip_gap = 6
+    local display_cy = y + SET_MENU_ROW_H / 2
+    local display_total_w =
+        #display_choices * display_chip_w +
+        (#display_choices - 1) * display_chip_gap
+    local display_start_x = geo.cx2 - display_total_w - 14
+
+    for i, choice in ipairs(display_choices) do
+        local cx =
+            display_start_x +
+            (i - 1) * (display_chip_w + display_chip_gap) +
+            display_chip_w / 2
+
+        local x1 = cx - display_chip_w / 2
+        local x2 = cx + display_chip_w / 2
+        local y1 = display_cy - display_chip_h / 2
+        local y2 = display_cy + display_chip_h / 2
+
+        if choice.current then
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_FG, "D0")
+            common.draw_text(ass, choice.label, cx, display_cy,
+                cfg.FONT_SIZE - 3, cfg.TEXT, "00", 5, false)
+        else
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_BG, "20")
+            common.draw_text(ass, choice.label, cx, display_cy,
+                cfg.FONT_SIZE - 3, cfg.TEXT, "30", 5, false)
+        end
+
+        local index = i
+
+        add_hitbox(
+            "set_display_" .. i,
+            x1,
+            y,
+            x2,
+            y + SET_MENU_ROW_H,
+            function()
+                if index == 1 then
+                    mp.set_property_bool("keepaspect", true)
+                    mp.set_property("video-unscaled", "no")
+                elseif index == 2 then
+                    mp.set_property_bool("keepaspect", false)
+                    mp.set_property("video-unscaled", "no")
+                else
+                    mp.set_property_bool("keepaspect", true)
+                    mp.set_property("video-unscaled", "yes")
+                end
+            end
+        )
+    end
+
+    y = y + SET_MENU_ROW_H
+    draw_sep(ass, geo, y + 2)
+    y = y + 2
+
+    local audio_tracks = {}
+
+    for _, track in ipairs(mp.get_property_native("track-list", {})) do
+        if track.type == "audio" then
+            audio_tracks[#audio_tracks + 1] = track
+        end
+    end
+
+    local editions = mp.get_property_native("edition-list", {}) or {}
+
+    -- Audio / Editions tabs
+    local tab_y1 = y
+    local tab_y2 = y + SET_MENU_TAB_H
+    local tab_w = (geo.cx2 - geo.cx1) / 2
+    local tab_cy = (tab_y1 + tab_y2) / 2
+
+    local audio_tab_x1 = geo.cx1
+    local audio_tab_x2 = audio_tab_x1 + tab_w
+
+    local edition_tab_x1 = audio_tab_x2
+    local edition_tab_x2 = geo.cx2
+
+    local audio_active = settings_track_list_mode == "audio"
+    local edition_active = settings_track_list_mode == "edition"
+
+    -- Audio tab text
     common.draw_text(
         ass,
-        "Reset",
-        geo.content_x1 + 26,
-        geo.footer_y1 + SUB_MENU_FOOTER_H / 2,
-        FONT_SIZE - 1,
-        TEXT,
-        "35",
+        "Audio (" .. tostring(#audio_tracks) .. ")",
+        (audio_tab_x1 + audio_tab_x2) / 2,
+        tab_cy,
+        cfg.FONT_SIZE - 1,
+        audio_active and cfg.TRACK_FG or cfg.TEXT,
+        audio_active and "00" or "40",
         5,
         false
     )
 
+    -- Editions tab text
     common.draw_text(
         ass,
-        "Done",
-        geo.content_x2 - 24,
-        geo.footer_y1 + SUB_MENU_FOOTER_H / 2,
-        FONT_SIZE - 1,
-        TRACK_FG,
-        "00",
+        "Editions (" .. tostring(#editions) .. ")",
+        (edition_tab_x1 + edition_tab_x2) / 2,
+        tab_cy,
+        cfg.FONT_SIZE - 1,
+        edition_active and cfg.TRACK_FG or cfg.TEXT,
+        edition_active and "00" or "40",
         5,
         false
     )
 
+    -- Accent underline for active tab
+    if audio_active then
+        common.draw_rrect(
+            ass,
+            audio_tab_x1 + 8,
+            tab_y2 - 3,
+            audio_tab_x2 - 8,
+            tab_y2,
+            1,
+            cfg.TRACK_FG,
+            "00"
+        )
+    else
+        common.draw_rrect(
+            ass,
+            edition_tab_x1 + 8,
+            tab_y2 - 3,
+            edition_tab_x2 - 8,
+            tab_y2,
+            1,
+            cfg.TRACK_FG,
+            "00"
+        )
+    end
+
+    draw_sep(ass, geo, tab_y2)
+
     add_hitbox(
-        "subtitle_reset",
-        geo.content_x1,
-        geo.footer_y1,
-        geo.content_x1 + 104,
-        geo.footer_y2,
+        "set_selector_audio",
+        audio_tab_x1,
+        tab_y1,
+        audio_tab_x2,
+        tab_y2,
         function()
-            mp.set_property_number("sub-delay", 0)
-            mp.set_property_number("sub-scale", 1.0)
-            mp.set_property_number("sub-pos", 100)
-            mp.set_property_number("sub-outline-size", 1.65)
-            mp.set_property_number("sub-shadow-offset", 0)
+            settings_track_list_mode = "audio"
+            settings_menu_scroll = 0
         end
     )
 
     add_hitbox(
-        "subtitle_footer_close",
-        geo.content_x2 - 104,
-        geo.footer_y1,
-        geo.content_x2,
-        geo.footer_y2,
+        "set_selector_edition",
+        edition_tab_x1,
+        tab_y1,
+        edition_tab_x2,
+        tab_y2,
         function()
-            subtitle_menu_open = false
-            subtitle_menu_scroll = 0
+            settings_track_list_mode = "edition"
+            settings_menu_scroll = 0
         end
     )
+
+    y = tab_y2 + 1
+
+    local list_y1 = y
+    local list_y2 = geo.body_y2
+    local list_geo = {
+        cx1 = geo.cx1,
+        cx2 = geo.cx2,
+        body_y1 = list_y1,
+        body_y2 = list_y2,
+    }
+
+    local rows = {}
+    local current_id
+    local current_aid
+    local disabled
+    local disable_name
+    local disable_cb
+    local show_disable_row
+    local item_prefix
+
+    if settings_track_list_mode == "audio" then
+        current_id = mp.get_property_native("aid")
+        current_aid = mp.get_property("aid")
+        show_disable_row = true
+        disabled = (current_aid == "no")
+        disable_name = "set_audio_disable"
+        item_prefix = "set_audio_track_"
+
+        disable_cb = function()
+            mp.set_property("aid", "no")
+        end
+
+        for i, track in ipairs(audio_tracks) do
+            local title = track.title
+            local language = track.lang
+
+            if not title or title == "" then
+                if language and language ~= "" then
+                    title = language
+                    language = nil
+                else
+                    title = "Audio track " .. tostring(i)
+                end
+            end
+
+            rows[#rows + 1] = {
+                id = track.id,
+                title = title,
+                language = language,
+                callback = function()
+                    mp.set_property_number("aid", track.id)
+                end
+            }
+        end
+    else
+        current_id = mp.get_property_number("current-edition", -1)
+        show_disable_row = false
+        item_prefix = "set_edition_"
+
+        for i, edition in ipairs(editions) do
+            local edition_id = edition.id
+            if edition_id == nil then
+                edition_id = i - 1
+            end
+
+            local title = edition.title
+            if not title or title == "" then
+                title = "Edition " .. tostring(edition_id + 1)
+            end
+
+            if edition.default then
+                title = title .. " (default)"
+            end
+
+            rows[#rows + 1] = {
+                id = edition_id,
+                title = title,
+                language = nil,
+                callback = function()
+                    mp.set_property_number("edition", edition_id)
+                end
+            }
+        end
+    end
+
+    local total_rows = #rows + (show_disable_row and 1 or 0)
+    local viewport_h = list_y2 - list_y1
+    local visible_rows = math.max(
+        1,
+        math.floor((viewport_h + 2) / SET_MENU_ROW_H)
+    )
+    settings_menu_max_scroll = math.max(0, total_rows - visible_rows)
+    settings_menu_scroll = math.max(
+        0,
+        math.min(settings_menu_scroll, settings_menu_max_scroll)
+    )
+
+    local first_y = list_y1 - settings_menu_scroll * SET_MENU_ROW_H
+    local offset = 0
+
+    if show_disable_row then
+        draw_subtitle_track_row(
+            ass,
+            list_geo,
+            first_y,
+            "Disable audio",
+            nil,
+            disabled,
+            disable_name,
+            disable_cb
+        )
+
+        offset = 1
+    end
+
+    for i, row in ipairs(rows) do
+        local row_y = first_y + (offset + i - 1) * SET_MENU_ROW_H
+
+        draw_subtitle_track_row(
+            ass,
+            list_geo,
+            row_y,
+            row.title,
+            row.language,
+            current_id == row.id,
+            item_prefix .. i,
+            row.callback
+        )
+    end
+
+    -- Scrollbar only for this fixed list area
+    if settings_menu_max_scroll > 0 and total_rows > 0 then
+        local sb_x1 = geo.cx2 - 5
+        local sb_x2 = geo.cx2 - 2
+
+        common.draw_rrect(
+            ass,
+            sb_x1,
+            list_y1 + 2,
+            sb_x2,
+            list_y2 - 2,
+            2,
+            cfg.TRACK_BG,
+            "30"
+        )
+
+        local thumb_h = math.max(
+            20,
+            viewport_h * visible_rows / total_rows
+        )
+
+        local thumb_y =
+            list_y1 +
+            (viewport_h - thumb_h) *
+            settings_menu_scroll / settings_menu_max_scroll
+
+        common.draw_rrect(
+            ass,
+            sb_x1 - 1,
+            thumb_y,
+            sb_x2 + 1,
+            thumb_y + thumb_h,
+            3,
+            cfg.TRACK_FG,
+            "00"
+        )
+    end
+end
+
+-- Main unified render
+local function render_settings_menu(ass, geo)
+    if settings_active_tab ~= "subtitles" and settings_active_tab ~= "video" then
+        settings_active_tab = "video"
+    end
+    -- Background card
+    common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2,
+        SET_MENU_RADIUS, cfg.BARBG, "00")
+    draw_rrect_outline(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2,
+        SET_MENU_RADIUS, cfg.ICON_COLOR, "B0", 1)
+
+    -- Header
+    common.draw_text(ass, "Settings",
+        geo.cx1, geo.header_y1 + SET_MENU_HEADER_H / 2,
+        cfg.FONT_SIZE + 2, cfg.TEXT, "00", 4, false)
+    common.draw_text(ass, "×",
+        geo.cx2 - 4, geo.header_y1 + SET_MENU_HEADER_H / 2,
+        cfg.FONT_SIZE + 6, cfg.ICON_COLOR, "00", 5, false)
+    add_hitbox("set_close",
+        geo.cx2 - 42, geo.header_y1 + 6,
+        geo.cx2 + 4,  geo.header_y2 - 6,
+        function()
+            settings_menu_open  = false
+            settings_menu_scroll = 0
+        end)
+    draw_sep(ass, geo, geo.header_y2)
+
+    -- Tab bar
+    local tabs = { {id = "subtitles", label = "Subtitles"}, {id = "video", label = "Video"} }
+    local tab_w = (geo.cx2 - geo.cx1) / #tabs
+    for i, tab in ipairs(tabs) do
+        local tx1   = geo.cx1 + (i - 1) * tab_w
+        local tx2   = tx1 + tab_w
+        local tab_cy = geo.tab_y1 + SET_MENU_TAB_H / 2
+        local active = (settings_active_tab == tab.id)
+        if active then
+            -- Accent underline
+            common.draw_rrect(ass, tx1 + 6, geo.tab_y2 - 3, tx2 - 6, geo.tab_y2, 1,
+                cfg.TRACK_FG, "00")
+        end
+        common.draw_text(ass, tab.label, (tx1 + tx2) / 2, tab_cy,
+            cfg.FONT_SIZE - 1,
+            active and cfg.TRACK_FG or cfg.TEXT,
+            active and "00" or "40",
+            5, false)
+        local tid = tab.id
+        add_hitbox("set_tab_" .. i, tx1, geo.tab_y1, tx2, geo.tab_y2,
+            function()
+                settings_active_tab  = tid
+                settings_menu_scroll = 0
+            end)
+    end
+    draw_sep(ass, geo, geo.tab_y2)
+
+    -- Tab body
+    if settings_active_tab == "subtitles" then
+        render_subtitles_tab(ass, geo)
+    else
+        render_video_tab(ass, geo)
+    end
+
+    -- Footer
+    draw_sep(ass, geo, geo.footer_y1)
+
+    if settings_active_tab == "subtitles" then
+        common.draw_text(ass, "Reset",
+            geo.cx1 + 28, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
+            cfg.FONT_SIZE, cfg.TEXT, "35", 5, false)
+        add_hitbox("set_sub_reset", geo.cx1, geo.footer_y1, geo.cx1 + 110, geo.footer_y2,
+            function()
+                mp.set_property_number("sub-delay",        0)
+                mp.set_property_number("sub-scale",        1.0)
+                mp.set_property_number("sub-pos",          100)
+                mp.set_property_number("sub-outline-size", 1.65)
+                mp.set_property_number("sub-shadow-offset",0)
+            end)
+    else
+        common.draw_text(ass, "Reset",
+            geo.cx1 + 28, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
+            cfg.FONT_SIZE, cfg.TEXT, "35", 5, false)
+        add_hitbox("set_vid_reset", geo.cx1, geo.footer_y1, geo.cx1 + 120, geo.footer_y2,
+            function()
+                mp.set_property_number("speed", 1.0)
+                mp.set_property_bool("keepaspect", true)
+                mp.set_property("video-unscaled", "no")
+                mp.set_property("video-aspect-override", "-1")
+            end)
+    end
+
+    common.draw_text(ass, "Done",
+        geo.cx2 - 26, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
+        cfg.FONT_SIZE - 1, cfg.TRACK_FG, "00", 5, false)
+    add_hitbox("set_done", geo.cx2 - 110, geo.footer_y1, geo.cx2, geo.footer_y2,
+        function()
+            settings_menu_open  = false
+            settings_menu_scroll = 0
+        end)
 end
 
 --------------------------------------------------------------------------------
@@ -1475,6 +1926,9 @@ local function render()
 
     if not bar_visible then
         osd.data = ""
+        local w, h = mp.get_osd_size()
+        osd.res_x = w
+        osd.res_y = h
         osd:update()
         popup_geo = nil
         add_menu_geo = nil
@@ -1488,18 +1942,19 @@ local function render()
     local L = get_layout()
 
     ass:new_event()
-    ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H%s&\\bord0\\shad0}", BARBG, ALPHA_BAR_BG))
+    ass:append(string.format("{\\pos(0,0)\\an7\\1c&H%s&\\1a&H%s&\\bord0\\shad0}", cfg.BARBG, cfg.ALPHA_BAR_BG))
     ass:draw_start()
-    ass:round_rect_cw(L.pill_x1, L.pill_y1, L.pill_x2, L.pill_y2, BAR_RADIUS)
+    ass:round_rect_cw(L.pill_x1, L.pill_y1, L.pill_x2, L.pill_y2, cfg.BAR_RADIUS)
     ass:draw_stop()
 
     local hovering_seek =
         (mouse_y >= L.seek_y - 8 and mouse_y <= L.seek_y + 8 and mouse_x >= L.seek_x1 and mouse_x <= L.seek_x2)
-    local track_h = hovering_seek and SEEK_HEIGHT_HOVER or SEEK_HEIGHT_NORMAL
+    local track_h = hovering_seek and cfg.SEEK_HEIGHT_HOVER or cfg.SEEK_HEIGHT_NORMAL
     local bar_x1, bar_x2 = L.seek_x1, L.seek_x2
     local bar_w = bar_x2 - bar_x1
 
-    common.draw_rrect(ass, bar_x1, L.seek_y - track_h / 2, bar_x2, L.seek_y + track_h / 2, track_h / 2, TRACK_BG, "00")
+    common.draw_rrect(ass, bar_x1, L.seek_y - track_h / 2,
+	bar_x2, L.seek_y + track_h / 2, track_h / 2, cfg.TRACK_BG, "00")
 
     local ratio = (duration and duration > 0) and math.min(1, math.max(0, position / duration)) or 0
     local filled_x = bar_x1 + bar_w * ratio
@@ -1511,7 +1966,7 @@ local function render()
             filled_x,
             L.seek_y + track_h / 2,
             track_h / 2,
-            TRACK_FG,
+            cfg.TRACK_FG,
             "00"
         )
     end
@@ -1525,76 +1980,47 @@ local function render()
         bar_x2,
         L.seek_y + track_h / 2,
         track_h / 2,
-        SEEK_BORDER_COLOR,
-        SEEK_BORDER_ALPHA,
-        SEEK_BORDER_WIDTH
+        cfg.SEEK_BORDER_COLOR,
+        cfg.SEEK_BORDER_ALPHA,
+        cfg.SEEK_BORDER_WIDTH
     )
 
     common.draw_rrect(
         ass,
-        filled_x - THUMB_W,
-        L.seek_y - THUMB_H,
-        filled_x + THUMB_W,
-        L.seek_y + THUMB_H,
-        THUMB_RADIUS,
-        THUMB_COLOR,
+        filled_x - cfg.THUMB_WW,
+        L.seek_y - cfg.THUMB_WH,
+        filled_x + cfg.THUMB_WW,
+        L.seek_y + cfg.THUMB_WH,
+        cfg.THUMB_WRADIUS,
+        cfg.THUMB_WCOLOR,
         "00"
     )
     draw_rrect_outline(
         ass,
-        filled_x - THUMB_W,
-        L.seek_y - THUMB_H,
-        filled_x + THUMB_W,
-        L.seek_y + THUMB_H,
-        THUMB_RADIUS,
-        THUMB_BORDER_COLOR,
-        THUMB_BORDER_ALPHA,
-        THUMB_BORDER_WIDTH
+        filled_x - cfg.THUMB_WW,
+        L.seek_y - cfg.THUMB_WH,
+        filled_x + cfg.THUMB_WW,
+        L.seek_y + cfg.THUMB_WH,
+        cfg.THUMB_WRADIUS,
+        cfg.THUMB_WBORDER_COLOR,
+        cfg.THUMB_WBORDER_ALPHA,
+        cfg.THUMB_WBORDER_WIDTH
     )
-
-    local measure_osd = mp.create_osd_overlay("ass-events")
-    measure_osd.hidden = true
-    measure_osd.compute_bounds = true
-
-    local function measure_text_width(text, font_size, font)
-        local f = font or UI_FONT
-        local osd_w, osd_h = mp.get_osd_size()
-
-        measure_osd.res_x = osd_w
-        measure_osd.res_y = osd_h
-
-        measure_osd.data =
-            string.format(
-            "{\\pos(1000,1000)\\an5\\fn%s\\fs%d" .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
-            f,
-            font_size,
-            text
-        )
-
-        local res = measure_osd:update()
-
-        if res and res.x0 and res.x1 then
-            return res.x1 - res.x0
-        end
-
-        -- Fallback only if libass does not return bounds.
-        return utf8_char_count(text) * font_size * 0.5
-    end
 
     if hovering_seek and hovered_chapter and hovered_chapter.title then
         local text_w = measure_text_width(
             hovered_chapter.title,
-            CHAPTER_TOOLTIP_FONT_SIZE,
-            UI_FONT
+            cfg.CHAPTER_TOOLTIP_FONT_SIZE,
+            cfg.CHAPTER_TOOLTIP_FONT
         )
 
         text_w = text_w + 2
 
-        local pad_x = CHAPTER_TOOLTIP_PAD_X or 0
-        local pad_y = CHAPTER_TOOLTIP_PAD_Y or 3
+        local pad_x = cfg.CHAPTER_TOOLTIP_PAD_X or 0
+        local pad_y = cfg.CHAPTER_TOOLTIP_PAD_Y or 3
 
         local pill_w = text_w + pad_x * 2
-        local pill_h = CHAPTER_TOOLTIP_FONT_SIZE + pad_y * 2
+        local pill_h = cfg.CHAPTER_TOOLTIP_FONT_SIZE + pad_y * 2
 
         local max_pill_w = (bar_x2 - bar_x1) - 12
         pill_w = math.min(pill_w, max_pill_w)
@@ -1606,7 +2032,7 @@ local function render()
             math.max(bar_x1 + half_w + 6, mouse_x)
         )
 
-        local center_y = L.seek_y - CHAPTER_TOOLTIP_OFFSET_Y
+        local center_y = L.seek_y - cfg.CHAPTER_TOOLTIP_OFFSET_Y
 
         local box_x1 = target_x - half_w
         local box_x2 = target_x + half_w
@@ -1619,21 +2045,21 @@ local function render()
             box_y1,
             box_x2,
             box_y2,
-            CHAPTER_TOOLTIP_RADIUS,
-            CHAPTER_TOOLTIP_BG_COLOR,
-            CHAPTER_TOOLTIP_BG_ALPHA
+            cfg.CHAPTER_TOOLTIP_RADIUS,
+            cfg.CHAPTER_TOOLTIP_BG_COLOR,
+            cfg.CHAPTER_TOOLTIP_BG_ALPHA
         )
         common.draw_text(
             ass,
             hovered_chapter.title,
             target_x,
             center_y,
-            CHAPTER_TOOLTIP_FONT_SIZE,
-            CHAPTER_TOOLTIP_FONT_COLOR,
-            CHAPTER_TOOLTIP_FONT_ALPHA,
+            cfg.CHAPTER_TOOLTIP_FONT_SIZE,
+            cfg.CHAPTER_TOOLTIP_FONT_COLOR,
+            cfg.CHAPTER_TOOLTIP_FONT_ALPHA,
             5,
             false,
-            CHAPTER_TOOLTIP_FONT
+            cfg.CHAPTER_TOOLTIP_FONT
         )
     end
 	add_hitbox(
@@ -1664,16 +2090,16 @@ local function render()
                 draw_volume_slider(ass, button.x, L.row_y)
             else
                 local glyph = type(definition.icon) == "function" and definition.icon() or definition.icon
-                local alpha = definition.alpha and definition.alpha() or ICON_DIM_A
-                draw_icon(ass, glyph, button.x, L.row_y, ICON_SIZE, ICON_COLOR, alpha)
+                local alpha = definition.alpha and definition.alpha() or cfg.ICON_DIM_A
+                draw_icon(ass, glyph, button.x, L.row_y, cfg.ICON_SIZE, cfg.ICON_COLOR, alpha)
             end
 
-            local item_pad_x = ICON_BG_ENABLED and ICON_BG_PAD_X or 0
+            local item_pad_x = cfg.ICON_BG_ENABLED and cfg.ICON_BG_PAD_X or 0
             local hitbox_half_w = math.max(16, button.width / 2 + item_pad_x)
-            local hitbox_half_h = math.max(16, ICON_BG_ENABLED and ICON_BG_HEIGHT / 2 or button.height / 2)
+            local hitbox_half_h = math.max(16, cfg.ICON_BG_ENABLED and cfg.ICON_BG_HEIGHT / 2 or button.height / 2)
 
-            if definition.kind == "volume_slider" and VOLUME_SLIDER_MUTE then
-                local mute_width = VOLUME_SLIDER_MUTE_WIDTH
+            if definition.kind == "volume_slider" and cfg.VOLUME_SLIDER_MUTE then
+                local mute_width = cfg.VOLUME_SLIDER_MUTE_WIDTH
                 local total_item_width = button.width
                 local mute_x = button.x - total_item_width / 2 + mute_width / 2
 
@@ -1692,9 +2118,9 @@ local function render()
 
                 add_hitbox(
                     "button_volume_slider_track",
-                    geo.slider_x1 - VOLUME_SLIDER_THUMB_WIDTH - 4,
+                    geo.slider_x1 - cfg.VOLUME_SLIDER_THUMB_WIDTH - 4,
                     L.row_y - hitbox_half_h,
-                    geo.slider_x2 + VOLUME_SLIDER_THUMB_WIDTH + 4,
+                    geo.slider_x2 + cfg.VOLUME_SLIDER_THUMB_WIDTH + 4,
                     L.row_y + hitbox_half_h,
                     function(px, py)
                         definition.click(px, py, button)
@@ -1715,7 +2141,7 @@ local function render()
         end
     end
 
-    local time_label_y = L.seek_y + TIME_LABEL_OFFSET_Y + 3
+    local time_label_y = L.seek_y + cfg.TIME_LABEL_OFFSET_Y + 3
     if not L.buttons.by_id.time then
         draw_time_label(ass, fmt_time(position), bar_x1, time_label_y, 4)
         draw_time_label(ass, fmt_time(duration), bar_x2, time_label_y, 6)
@@ -1737,18 +2163,32 @@ local function render()
         add_menu_geo = nil
     end
 
-    if subtitle_menu_open and L.buttons.by_id.subtitle then
-        subtitle_menu_geo = compute_subtitle_menu_geo(L)
-        render_subtitle_menu(ass, subtitle_menu_geo)
+    if settings_menu_open then
+        settings_menu_geo = compute_settings_menu_geo()
+        render_settings_menu(ass, settings_menu_geo)
     else
-        subtitle_menu_open = false
-        subtitle_menu_geo = nil
+        settings_menu_open = false
+        settings_menu_geo = nil
     end
 
+    local w, h = mp.get_osd_size()
     osd.data = ass.text
-    osd.res_x = screen_w
-    osd.res_y = screen_h
+    osd.res_x = w
+    osd.res_y = h
     osd:update()
+end
+
+local function schedule_render()
+    if render_timer then
+        return -- Already scheduled
+    end
+    render_timer = mp.add_timeout(
+        0.016, -- ~60fps frame time
+        function()
+            render_timer = nil
+            render()
+        end
+    )
 end
 
 --------------------------------------------------------------------------------
@@ -1781,11 +2221,11 @@ local function mouse_in_active_zone()
         return true
     end
 
-    if subtitle_menu_geo
-        and mouse_x >= subtitle_menu_geo.card_x1 - 10
-        and mouse_x <= subtitle_menu_geo.card_x2 + 10
-        and mouse_y >= subtitle_menu_geo.card_y1 - 10
-        and mouse_y <= subtitle_menu_geo.card_y2 + 10 then
+    if settings_menu_geo
+        and mouse_x >= settings_menu_geo.card_x1 - 10
+        and mouse_x <= settings_menu_geo.card_x2 + 10
+        and mouse_y >= settings_menu_geo.card_y1 - 10
+        and mouse_y <= settings_menu_geo.card_y2 + 10 then
         return true
     end
 
@@ -1796,12 +2236,9 @@ local function restart_hide_timer()
     if hide_timer then
         hide_timer:kill()
     end
-    if not file_loaded then
-        return
-    end
     hide_timer =
         mp.add_timeout(
-        AUTOHIDE_SEC,
+        cfg.AUTOHIDE_SEC,
         function()
             if volume_dragging or volume_slider_dragging or mouse_in_active_zone() then
                 restart_hide_timer()
@@ -1831,9 +2268,9 @@ local function toggle_bar()
         bar_visible = false
         volume_popup_open = false
         add_menu_open = false
-        subtitle_menu_open = false
-        subtitle_menu_geo = nil
-        subtitle_menu_scroll = 0
+        settings_menu_open = false
+        settings_menu_geo = nil
+        settings_menu_scroll = 0
         render()
     else
         show_bar()
@@ -1902,9 +2339,9 @@ local function point_in_own_ui(px, py)
 
     -- Subtitle settings dialog.
     if
-        subtitle_menu_geo and px >= subtitle_menu_geo.card_x1 and px <= subtitle_menu_geo.card_x2 and
-            py >= subtitle_menu_geo.card_y1 and
-            py <= subtitle_menu_geo.card_y2
+        settings_menu_geo and px >= settings_menu_geo.card_x1 and px <= settings_menu_geo.card_x2 and
+            py >= settings_menu_geo.card_y1 and
+            py <= settings_menu_geo.card_y2
      then
         return true
     end
@@ -2018,7 +2455,18 @@ local function on_mouse_move()
             break
         end
     end
-    mp.commandv("script-message", "python-bridge", "osc-hover", tostring(hovering_hitbox))
+    local hover_state = hovering_hitbox
+
+    if hover_state ~= last_osc_hover then
+        last_osc_hover = hover_state
+
+        mp.commandv(
+            "script-message",
+            "python-bridge",
+            "osc-hover",
+            tostring(hover_state)
+        )
+    end
 
     if mouse_in_active_zone() then
         show_bar()
@@ -2099,33 +2547,31 @@ local function on_mbtn_left(event)
                 render()
             end
         end
-        if subtitle_menu_open and subtitle_menu_geo then
-            local in_subtitle_menu =
-                mouse_x >= subtitle_menu_geo.card_x1 and mouse_x <= subtitle_menu_geo.card_x2 and
-                mouse_y >= subtitle_menu_geo.card_y1 and
-                mouse_y <= subtitle_menu_geo.card_y2
+        if settings_menu_open and settings_menu_geo then
+            local in_settings_menu =
+                mouse_x >= settings_menu_geo.card_x1 and mouse_x <= settings_menu_geo.card_x2 and
+                mouse_y >= settings_menu_geo.card_y1 and
+                mouse_y <= settings_menu_geo.card_y2
 
-            if in_subtitle_menu then
-                -- Subtitle hitboxes are created after the normal OSC hitboxes.
-                -- Search backward so the dialog has topmost click priority.
+            if in_settings_menu then
+                -- Settings hitboxes are appended last; search backward for top priority.
                 for i = #hitboxes, 1, -1 do
                     local b = hitboxes[i]
 
-                    if b.name:match("^subtitle_") and point_in(mouse_x, mouse_y, b) then
+                    if b.name:match("^set_") and point_in(mouse_x, mouse_y, b) then
                         b.cb(mouse_x, mouse_y)
                         render()
                         return
                     end
                 end
 
-                -- Blank space inside the modal should be consumed, not passed
-                -- through to the seek bar or other controls.
+                -- Blank area inside the modal is consumed, not passed through.
                 return
             else
-                -- Clicking outside the subtitle dialog closes it.
-                subtitle_menu_open = false
-                subtitle_menu_geo = nil
-                subtitle_menu_scroll = 0
+                -- Clicking outside the settings dialog closes it.
+                settings_menu_open = false
+                settings_menu_geo = nil
+                settings_menu_scroll = 0
                 render()
                 return
             end
@@ -2198,8 +2644,8 @@ mp.add_key_binding(
         local L = get_layout()
 
         -- Subtitle dialog owns the wheel only while it is open.
-        if subtitle_menu_open then
-            subtitle_menu_scroll = math.max(0, subtitle_menu_scroll - 1)
+        if settings_menu_open then
+            settings_menu_scroll = math.max(0, settings_menu_scroll - 1)
             render()
             return
         end
@@ -2247,8 +2693,8 @@ mp.add_key_binding(
         local L = get_layout()
 
         -- Subtitle dialog owns the wheel only while it is open.
-        if subtitle_menu_open then
-            subtitle_menu_scroll = math.min(subtitle_menu_max_scroll, subtitle_menu_scroll + 1)
+        if settings_menu_open then
+            settings_menu_scroll = math.min(settings_menu_max_scroll, settings_menu_scroll + 1)
             render()
             return
         end
@@ -2297,12 +2743,18 @@ mp.observe_property(
     "osd-dimensions",
     "native",
     function(_, val)
-        if not val then
+        if not val or not val.w or not val.h or val.w <= 0 or val.h <= 0 then
             return
         end
-        screen_w = val.w
-        screen_h = val.h
-        render()
+        if screen_w ~= val.w or screen_h ~= val.h then
+            screen_w = val.w
+            screen_h = val.h
+            osd.res_x = screen_w
+            osd.res_y = screen_h
+            if file_loaded then
+                render()
+            end
+        end
     end
 )
 
@@ -2311,7 +2763,7 @@ mp.observe_property(
     "number",
     function(_, v)
         duration = v or 0
-        render()
+        schedule_render()
     end
 )
 mp.observe_property(
@@ -2320,7 +2772,7 @@ mp.observe_property(
     function(_, v)
         position = v or 0
         if bar_visible then
-            render()
+            schedule_render()
         end
     end
 )
@@ -2329,7 +2781,7 @@ mp.observe_property(
     "bool",
     function(_, v)
         paused = v
-        render()
+        schedule_render()
     end
 )
 mp.observe_property(
@@ -2337,7 +2789,7 @@ mp.observe_property(
     "bool",
     function(_, v)
         muted = v
-        render()
+        schedule_render()
     end
 )
 mp.observe_property(
@@ -2345,7 +2797,7 @@ mp.observe_property(
     "number",
     function(_, v)
         volume = v or 100
-        render()
+        schedule_render()
     end
 )
 
@@ -2371,13 +2823,39 @@ mp.register_event(
     end
 )
 
+local file_init_timer = nil
+
+local function on_file_initialized()
+    if not file_loaded then
+        file_loaded = true
+        last_subtitle_sid = nil
+        last_osc_hover = nil
+        bar_visible = true
+    end
+    render()
+end
+
 mp.register_event(
     "file-loaded",
     function()
-        local existing = mp.get_property_native("chapter-list", {})
-        if #existing == 0 then
-            load_youtube_chapters()
+        -- Use a micro-timer to batch rapid-fire events
+        if file_init_timer then
+            file_init_timer:kill()
         end
+        file_init_timer = mp.add_timeout(
+            0.05,
+            function()
+                on_file_initialized()
+
+                -- NEW: auto-load chapters if none exist
+                local existing = mp.get_property_native("chapter-list", {})
+                if #existing == 0 then
+                    load_youtube_chapters()
+                end
+
+                file_init_timer = nil
+            end
+        )
     end
 )
 
@@ -2385,16 +2863,19 @@ mp.observe_property(
     "path",
     "string",
     function(_, v)
-        file_loaded = (v ~= nil and v ~= "")
-        if file_loaded then
-            restart_hide_timer()
-        else
-            bar_visible = true
-            if hide_timer then
-                hide_timer:kill()
+        if v ~= nil and v ~= "" and not file_loaded then
+            -- Path changed but file-loaded hasn't fired yet (edge case)
+            if file_init_timer then
+                file_init_timer:kill()
             end
+            file_init_timer = mp.add_timeout(
+                0.05,
+                function()
+                    on_file_initialized()
+                    file_init_timer = nil
+                end
+            )
         end
-        render()
     end
 )
 
