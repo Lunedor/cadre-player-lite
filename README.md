@@ -58,6 +58,9 @@ The components detect one another when present and coordinate mouse input, windo
 - Add-file, add-folder, and add-URL menus using native platform dialogs.
 - Previous, play/pause, next, stop, fullscreen, and playlist controls.
 - Theme-configurable button slots for left, center, and right groups.
+- Supported buttons: prev, seek_back, play, pause, seek_forward, next, stop, volume, volume_slider, mute, add, fullscreen, playlist, time, settings, subtitle.
+- Settings dialog dialog covers subtitle, audio, and quality (editions/titles) track selection, as well as subtitle options such as delay, scale, position, outline, and shadow, along with video settings like playback speed, aspect ratio, and display mode.
+- Subtitle button to toggle the visibility of the selected subtitle.
 - Optional 10-second seek buttons and YouTube-style `time` display item.
 - Independent seekbar/button insets and top/bottom button-row anchoring.
 - Optional icon backgrounds, icon borders, group capsules, and group borders.
