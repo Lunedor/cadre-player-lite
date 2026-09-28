@@ -28,6 +28,11 @@ mp.register_script_message(
 --------------------------------------------------------------------------------
 
 local theme = common.theme
+local icon_size = theme.icon_size or 24
+local icon_bg_height = theme.icon_bg_height_osc
+    or theme.icon_bg_height
+    or (icon_size + 12)
+local icon_bg_width = theme.icon_bg_width_osc or icon_bg_height
 local cfg = {
     UI_FONT = theme.font_ui or theme.font_text or "Inter",
     ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined",
@@ -70,7 +75,7 @@ local cfg = {
     BUTTON_ROW_OFFSET = theme.button_row_offset_osc or theme.button_row_offset or 60,
 
     ICON_SPACING = theme.icon_spacing or 36,
-    ICON_SIZE = theme.icon_size or 24,
+    ICON_SIZE = icon_size,
     TIME_ITEM_WIDTH = theme.time_item_width_osc or 150,
     TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16,
     TIME_LABEL_OUTLINE_WIDTH =
@@ -97,9 +102,9 @@ local cfg = {
     ICON_BG_ENABLED = theme.icon_bg_enabled_osc or false,
     ICON_BG_COLOR = common.bgr(theme.icon_bg_color_osc or theme.surface_color or "0D1117"),
     ICON_BG_ALPHA = theme.icon_bg_alpha_osc or "20",
-    ICON_BG_PAD_X =
-    theme.icon_bg_pad_x_osc or 25,
-    ICON_BG_HEIGHT = theme.icon_bg_height_osc or theme.icon_bg_height or 36,
+    ICON_BG_PAD_X = theme.icon_bg_pad_x_osc
+    or math.max(0, (icon_bg_width - icon_size) / 2),
+    ICON_BG_HEIGHT = icon_bg_height,
     ICON_BG_RADIUS = theme.icon_bg_radius_osc or 0,
     ICON_BORDER_ENABLED = theme.icon_border_enabled_osc or false,
     ICON_BORDER_COLOR = common.bgr(theme.icon_border_color_osc or "FFFFFF"),
@@ -109,7 +114,8 @@ local cfg = {
     ICON_GROUP_BG_COLOR = common.bgr(theme.icon_group_bg_color_osc or theme.surface_color or "0D1117"),
     ICON_GROUP_BG_ALPHA = theme.icon_group_bg_alpha_osc or "40",
     ICON_GROUP_BG_PADDING = theme.icon_group_bg_padding_osc or 8,
-    ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc or theme.icon_bg_height_osc or 52,
+    ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc
+    or (icon_bg_height + 16),
     ICON_GROUP_BG_RADIUS = theme.icon_group_bg_radius_osc or 0,
     ICON_GROUP_BORDER_ENABLED = theme.icon_group_border_enabled_osc or false,
     ICON_GROUP_BORDER_COLOR = common.bgr(theme.icon_group_border_color_osc or "FFFFFF"),
