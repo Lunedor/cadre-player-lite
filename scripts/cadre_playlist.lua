@@ -3,7 +3,7 @@ cadre_playlist.lua
 ]]
 local mp = require "mp"
 local assdraw = require "mp.assdraw"
-
+local utils = require "mp.utils"
 local common_path = mp.find_config_file("scripts/cadre_common.lua")
 local common = dofile(common_path)
 common.register_script("cadre_playlist")
@@ -71,6 +71,7 @@ local ICON = {
     delete = "\238\161\178", -- U+E872
     repeat_all = "\238\129\128", -- U+E040
     repeat_one = "\238\129\129", -- U+E041
+    repeat_auto = "\239\129\147", -- U+F053
     play = "\238\128\183", -- U+E037
     pause = "\238\128\180", -- U+E034
     add = "\238\133\133", -- U+E145
@@ -354,6 +355,23 @@ local function render_add_menu(ass, geo)
         )
     end
 end
+
+local function draw_repeat_a_badge(ass, cx, cy, size, color, alpha)
+    -- Draw a small "A" centered on the icon
+    local font_size = math.max(10, math.floor(size * 0.55))
+    local offset_y = math.floor(size * 0.05)
+    common.draw_text(
+        ass,
+        "A",
+        cx,
+        cy + offset_y,
+        font_size,
+        color,
+        alpha,
+        5,  -- center align
+        true -- bold
+    )
+end
 --------------------------------------------------------------------------------
 -- PLAYLIST DATA
 --------------------------------------------------------------------------------
@@ -502,7 +520,12 @@ local function cycle_repeat()
         repeat_mode = "one"
         common.set_property_cached("loop-playlist", "no")
         common.set_property_cached("loop-file", "inf")
+    elseif repeat_mode == "one" then
+        repeat_mode = "auto"
+        common.set_property_cached("loop-playlist", "no")
+        common.set_property_cached("loop-file", "no")
     else
+        -- was "auto"
         repeat_mode = "off"
         common.set_property_cached("loop-playlist", "no")
         common.set_property_cached("loop-file", "no")
@@ -522,6 +545,126 @@ mp.register_event(
     end
 )
 
+--------------------------------------------------------------------------------
+-- AUTO-NEXT: load next file in folder when at last playlist entry (timer-based)
+--------------------------------------------------------------------------------
+
+local MEDIA_EXTS = {
+    "mp4","mkv","avi","mov","webm","wmv","flv","m4v","mpeg","mpg","3gp",
+    "mp3","flac","wav","m4a","ogg","wma","aac",
+}
+
+local EXT_SET = {}
+for _, e in ipairs(MEDIA_EXTS) do
+    EXT_SET[e:lower()] = true
+end
+
+local function is_media_file(name)
+    local ext = name:match("%.([^.]+)$")
+    return ext and EXT_SET[ext:lower()]
+end
+
+local function get_dir_and_name(path)
+    if not path then
+        return nil, nil
+    end
+    if path:match("^https?://") then
+        return nil, nil
+    end
+    local dir = path:match("^(.+)[/\\][^/\\]+$")
+    local name = path:match("[/\\]([^/\\]+)$") or path
+    if not dir then
+        dir = "."
+    end
+    return dir, name
+end
+
+local function next_file_in_folder()
+    local path = mp.get_property("path")
+    local dir, name = get_dir_and_name(path)
+    if not dir or not name then
+        return nil
+    end
+
+    -- Use dir command to list files
+    local cmd = 'dir /b "' .. dir .. '"'
+    local handle = io.popen(cmd)
+    if not handle then
+        return nil
+    end
+
+    local files = {}
+    for line in handle:lines() do
+        if is_media_file(line) then
+            files[#files + 1] = line
+        end
+    end
+    handle:close()
+
+    table.sort(files)
+
+    local idx = nil
+    for i, f in ipairs(files) do
+        if f == name then
+            idx = i
+            break
+        end
+    end
+    if not idx or idx >= #files then
+        return nil
+    end
+
+    return dir .. "\\" .. files[idx + 1]
+end
+
+local auto_next_triggered_for = nil
+
+mp.add_periodic_timer(
+    0.2,
+    function()
+        if repeat_mode ~= "auto" then
+            return
+        end
+
+        local pos = mp.get_property_number("time-pos", 0)
+        local dur = mp.get_property_number("duration", 0)
+        if dur <= 0 or pos <= 0 then
+            return
+        end
+
+        local remaining = dur - pos
+        if remaining > 0.25 or remaining <= 0 then
+            return
+        end
+
+        local path = mp.get_property("path")
+        if auto_next_triggered_for == path then
+            return
+        end
+        auto_next_triggered_for = path
+
+        local pl = mp.get_property_native("playlist", {})
+        local ppos = mp.get_property_number("playlist-pos", -1)
+        if #pl <= 0 or ppos < 0 then
+            return
+        end
+
+        -- Only act when at the last entry in the playlist.
+        if ppos < #pl - 1 then
+            return
+        end
+
+        local next_path = next_file_in_folder()
+        if not next_path then
+            return
+        end
+
+        mp.commandv("loadfile", next_path, "append-play")
+        local new_pl = mp.get_property_native("playlist", {})
+        mp.commandv("playlist-play-index", #new_pl - 1)
+        mp.set_property_bool("pause", false)
+    end
+)
 --------------------------------------------------------------------------------
 -- REMOVE / DELETE
 --------------------------------------------------------------------------------
@@ -987,9 +1130,19 @@ local function render()
     add_hitbox("shuffle", tx - 14, ty - 14, tx + 14, ty + 14, toggle_shuffle)
     tx = tx + spacing
 
-    local rep_icon = repeat_mode == "one" and ICON.repeat_one or ICON.repeat_all
-    local rep_color = ICON_COLOR
-    draw_icon(ass, rep_icon, tx, ty, TOOLBAR_ICON_SIZE, rep_color, repeat_mode ~= "off" and "00" or "60")
+    -- Repeat button
+    local rep_icon = ICON.repeat_all
+    local rep_alpha = repeat_mode ~= "off" and "00" or "60"
+
+    if repeat_mode == "all" then
+        rep_icon = ICON.repeat_all
+    elseif repeat_mode == "one" then
+        rep_icon = ICON.repeat_one
+    elseif repeat_mode == "auto" then
+        rep_icon = ICON.repeat_auto
+    end
+
+    draw_icon(ass, rep_icon, tx, ty, TOOLBAR_ICON_SIZE, ICON_COLOR, rep_alpha)
     add_hitbox("repeat", tx - 14, ty - 14, tx + 14, ty + 14, cycle_repeat)
 
     local rx = L.x2 - TOOLBAR_ICON_SIZE - SCROLLBAR_WIDTH
@@ -1511,8 +1664,44 @@ mp.register_script_message(
     function()
         if shuffle_on then
             advance_shuffled(1)
-        else
+            return
+        end
+
+        local pl = mp.get_property_native("playlist", {})
+        local pos = mp.get_property_number("playlist-pos", -1)
+
+        -- If there is a next entry in the playlist, always go to it.
+        if pos >= 0 and pos < #pl - 1 then
             mp.commandv("playlist-next", "weak")
+            return
+        end
+
+        -- At last playlist entry: mode-specific behavior.
+        if repeat_mode == "off" then
+            -- Do nothing.
+            return
+        elseif repeat_mode == "all" then
+            -- Wrap to first item in playlist.
+            mp.commandv("playlist-play-index", 0)
+            mp.set_property_bool("pause", false)
+            return
+        elseif repeat_mode == "one" then
+            -- Restart the current file.
+            mp.command("seek 0")
+            mp.set_property_bool("pause", false)
+            return
+        elseif repeat_mode == "auto" then
+            -- Load next file in folder if it exists.
+            local next_path = next_file_in_folder()
+            if not next_path then
+                return
+            end
+
+            mp.commandv("loadfile", next_path, "append-play")
+            local new_pl = mp.get_property_native("playlist", {})
+            mp.commandv("playlist-play-index", #new_pl - 1)
+            mp.set_property_bool("pause", false)
+            return
         end
     end
 )
