@@ -99,7 +99,7 @@ M.theme_variant = "FloatingCapsules" -- Replaces this file with script-opts/cadr
 -- 4.1. MAIN PANEL (Global Geometry & Background)
 -- =======================================================
 -- M.bar_height_osc       = 90       -- Total height of the bottom control panel
--- M.max_bar_width_osc	  = 800		 -- Maximum width of the bottom control panel, screen_w will strech bar to all size avaiable
+-- M.max_bar_width_osc	  = 800		 -- Maximum width of the bottom control panel, uncomment this to strech bar to all size avaiable
 -- M.bar_side_inset_osc   = 24       -- Gap between the OSC and the left/right window edges
 -- M.bar_y_anchor_osc     = "bottom" -- "bottom", "top", or "center"
 -- M.bar_top_inset_osc    = 24       -- Gap above the OSC when top-anchored
