@@ -79,7 +79,7 @@ The components detect one another when present and coordinate mouse input, windo
 - Remove selected entries from the playlist.
 - Move local files to the platform trash/recycle bin with `Shift+DEL`.
 - Shuffle playback order without changing the visible playlist order.
-- Repeat modes: off, repeat playlist, and repeat current item.
+- Repeat modes: off, repeat playlist, repeat current and Auto Next feature that automatically advances to the next file in the folder when the playlist reaches the end.
 - Save and load M3U/M3U8 playlists.
 - Per-item duration display when mpv has reported the duration.
 - Configurable row hover, selected, current-item, index, title, and duration styling.
