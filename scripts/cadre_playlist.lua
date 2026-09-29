@@ -83,6 +83,7 @@ local ICON = {
 --------------------------------------------------------------------------------
 
 local osd = mp.create_osd_overlay("ass-events")
+local render_ctrl = common.render_controller(osd)
 local screen_w, screen_h = 1280, 720
 local mouse_x, mouse_y = -1, -1
 
@@ -118,6 +119,15 @@ local load_append_mode = false
 local duration_cache = {}
 local add_menu_open = false
 local add_menu_geo = nil
+
+local click_state = {
+    down_time = 0,
+    down_x = -1,
+    down_y = -1,
+    down_index = -1,
+    is_dragging = false
+}
+local selection_last_added = -1
 
 --------------------------------------------------------------------------------
 -- LAYOUT
@@ -264,35 +274,46 @@ end
 local function clear_selection()
     selected_indices = {}
     selected_index = -1
+    selection_anchor = -1
+    selection_last_added = -1
 end
 
 local function set_single_selection(index)
     selected_indices = {[index] = true}
     selected_index = index
     selection_anchor = index
+    selection_last_added = index
 end
 
 local function select_row(index, event)
     local ctrl = has_modifier("ctrl", event)
     local shift = has_modifier("shift", event)
 
-    if shift and selection_anchor >= 0 then
-        local first, last = math.min(selection_anchor, index), math.max(selection_anchor, index)
-        if not ctrl then
-            selected_indices = {}
+    if shift then
+        -- Use last-added item as anchor if available, otherwise use selection_anchor
+        local range_start = (selection_last_added >= 0) and selection_last_added or selection_anchor
+        if range_start >= 0 then
+            local first, last = math.min(range_start, index), math.max(range_start, index)
+            if not ctrl then
+                selected_indices = {}
+            end
+            for i = first, last do
+                selected_indices[i] = true
+            end
+            selected_index = index
         end
-        for i = first, last do
-            selected_indices[i] = true
-        end
-        selected_index = index
     elseif ctrl then
         if selected_indices[index] then
             selected_indices[index] = nil
         else
             selected_indices[index] = true
+            selection_last_added = index  -- Track the last added item
         end
         selected_index = index
-        selection_anchor = index
+        -- Only set anchor if this is the first item being selected
+        if selection_anchor < 0 then
+            selection_anchor = index
+        end
     else
         set_single_selection(index)
     end
@@ -717,10 +738,10 @@ end
 local function render()
     hitboxes = common.new_hitboxes()
     local ass = assdraw.ass_new()
+    local w, h = mp.get_osd_size()
 
     if not panel_visible then
-        osd.data = ""
-        osd:update()
+        render_ctrl:update("", w, h)
         publish_bounds(nil)
         add_menu_geo = nil
         return
@@ -1017,10 +1038,7 @@ local function render()
         add_menu_geo = nil
     end
 
-    osd.data = ass.text
-    osd.res_x = screen_w
-    osd.res_y = screen_h
-    osd:update()
+    render_ctrl:update(ass.text, w, h)
 end
 
 --------------------------------------------------------------------------------
@@ -1028,6 +1046,21 @@ end
 --------------------------------------------------------------------------------
 
 local mouse_over_playlist = false
+
+local function select_all()
+    if not panel_visible then
+        return
+    end
+    selected_indices = {}
+    for i, entry_wrap in ipairs(filtered_items) do
+        selected_indices[entry_wrap.real_index] = true
+    end
+    if #filtered_items > 0 then
+        selected_index = filtered_items[#filtered_items].real_index
+        selection_anchor = filtered_items[1].real_index
+    end
+    render()
+end
 
 local function update_wheel_bindings(over)
     if over == mouse_over_playlist then
@@ -1073,6 +1106,9 @@ local function row_at_xy(L, px, py)
     return entry_wrap and entry_wrap.real_index or nil
 end
 
+local DRAG_THRESHOLD_PX = 5
+local CLICK_MAX_MS = 200
+
 local function on_mouse_move_internal()
     local is_over = false
     local L = nil
@@ -1117,7 +1153,23 @@ local function on_mouse_move_internal()
         render()
         return
     end
-
+    if click_state.down_index >= 0 and not click_state.is_dragging then
+        local dx = mouse_x - click_state.down_x
+        local dy = mouse_y - click_state.down_y
+        if dx*dx + dy*dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX then
+            click_state.is_dragging = true
+            -- Start drag if there are selected items
+            local idx = click_state.down_index
+            if selected_indices[idx] or (selected_index == idx) then
+                drag.active = true
+                drag.from_index = idx
+                drag.indices = sorted_selected_indices()
+                if #drag.indices == 0 then
+                    drag.indices = {idx}
+                end
+            end
+        end
+    end
     render()
 end
 
@@ -1205,7 +1257,9 @@ local function on_mbtn_left(event)
         return
     end
     local L = get_layout()
+
     if event.event == "down" or event.event == "press" then
+        -- Handle add menu clicks
         if add_menu_open and add_menu_geo then
             local in_menu = mouse_x >= add_menu_geo.card_x1
                 and mouse_x <= add_menu_geo.card_x2
@@ -1214,55 +1268,82 @@ local function on_mbtn_left(event)
 
             if in_menu then
                 for _, b in ipairs(hitboxes) do
-                  if b.name:match("^pl_add_menu_") and point_in(mouse_x, mouse_y, b) then
-                      b.cb()
-                      render()
-                      return
-                  end
-              end
-              return
-          end
-        end
-        local track_x1 = L.x2 - SCROLLBAR_WIDTH - 8
-        if mouse_x >= track_x1 and mouse_x <= L.x2 and mouse_y >= L.list_y1 and mouse_y <= L.list_y2 then
-            scrollbar_drag = true
-            return
-        end
-
-        local row_idx = row_at_xy(L, mouse_x, mouse_y)
-        if row_idx ~= nil then
-            local now = mp.get_time()
-            local modified = has_modifier("ctrl", event) or has_modifier("shift", event)
-            if not modified and last_click_index == row_idx and (now - last_click_time) < DOUBLE_CLICK_SEC then
-                mp.commandv("playlist-play-index", row_idx)
-                last_click_index = -1
-            else
-                if modified or not selected_indices[row_idx] then
-                    select_row(row_idx, event)
+                    if b.name:match("^pl_add_menu_") and point_in(mouse_x, mouse_y, b) then
+                        b.cb()
+                        render()
+                        return
+                    end
                 end
-                drag.active = selected_indices[row_idx] == true
-                drag.from_index = row_idx
-                drag.current_target = row_idx
-                drag.indices = sorted_selected_indices()
-                if modified then
-                    last_click_index = -1
-                else
-                    last_click_index = row_idx
-                    last_click_time = now
-                end
+                return
             end
-            render()
-            return
         end
 
-        for _, b in ipairs(hitboxes) do
-            if point_in(mouse_x, mouse_y, b) then
-                b.cb()
+        -- Handle toolbar button clicks
+        if mouse_y >= L.toolbar_y1 then
+            if mouse_x >= L.x2 - 160 and mouse_x <= L.x2 - 160 + 32 then
+                toggle_shuffle()
+                render()
+                return
+            elseif mouse_x >= L.x2 - 120 and mouse_x <= L.x2 - 120 + 32 then
+                cycle_repeat_mode()
+                render()
+                return
+            elseif mouse_x >= L.x2 - 80 and mouse_x <= L.x2 - 80 + 32 then
+                save_playlist()
+                render()
+                return
+            elseif mouse_x >= L.x2 - 40 and mouse_x <= L.x2 - 40 + 32 then
+                load_playlist()
                 render()
                 return
             end
         end
 
+        -- Handle scrollbar drag start
+        if mouse_x >= L.x2 - SCROLLBAR_WIDTH and mouse_x <= L.x2 then
+            if mouse_y >= L.list_y1 and mouse_y <= L.list_y2 then
+                scrollbar_drag = true
+                return
+            end
+        end
+
+        -- Handle row click
+        local row_idx = row_at_xy(L, mouse_x, mouse_y)
+        if row_idx then
+            local now = mp.get_time()
+            local ctrl = has_modifier("ctrl", event)
+            local shift = has_modifier("shift", event)
+            local modified = ctrl or shift
+
+            -- Check for double-click (only on unmodified clicks)
+            if not modified and last_click_index == row_idx and (now - last_click_time) < DOUBLE_CLICK_SEC then
+                mp.commandv("playlist-play-index", row_idx)
+                last_click_index = -1
+                last_click_time = 0
+                render()
+                return
+            end
+
+            -- Record click state for drag detection
+            click_state.down_time = now * 1000
+            click_state.down_x = mouse_x
+            click_state.down_y = mouse_y
+            click_state.down_index = row_idx
+            click_state.is_dragging = false
+            click_state.was_selected = selected_indices[row_idx] or (selected_index == row_idx)
+
+            -- Update selection immediately for plain clicks
+            if not modified and not selected_indices[row_idx] then
+                set_single_selection(row_idx)
+            end
+
+            last_click_index = not modified and row_idx or -1
+            last_click_time = not modified and now or 0
+            render()
+            return
+        end
+
+        -- Fallback: other hitboxes
         for _, b in ipairs(hitboxes) do
             if point_in(mouse_x, mouse_y, b) then
                 b.cb()
@@ -1272,7 +1353,9 @@ local function on_mbtn_left(event)
         end
     elseif event.event == "up" or event.event == "release" then
         scrollbar_drag = false
-        if drag.active then
+
+        -- Handle drag end (only if we actually started dragging)
+        if drag.active and click_state.is_dragging then
             if drag.current_target >= 0 then
                 reorder_selected(drag.current_target)
             end
@@ -1281,7 +1364,53 @@ local function on_mbtn_left(event)
             drag.current_target = -1
             drag.indices = {}
             render()
+            return
         end
+
+        -- Reset drag state if we didn't actually drag
+        if drag.active and not click_state.is_dragging then
+            drag.active = false
+            drag.from_index = -1
+            drag.current_target = -1
+            drag.indices = {}
+        end
+
+        -- Handle plain click selection (if not dragging and not modified)
+        local row_idx = row_at_xy(L, mouse_x, mouse_y)
+        local elapsed = mp.get_time() * 1000 - click_state.down_time
+        local dx = mouse_x - click_state.down_x
+        local dy = mouse_y - click_state.down_y
+        local moved = dx * dx + dy * dy > DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX
+        local is_click = not moved and elapsed < CLICK_MAX_MS and row_idx == click_state.down_index
+
+        if is_click and row_idx then
+            local ctrl = has_modifier("ctrl", event)
+            local shift = has_modifier("shift", event)
+
+            if not ctrl and not shift then
+                -- Plain click: only select this item (if not already selected)
+                if not selected_indices[row_idx] and not click_state.was_selected then
+                    set_single_selection(row_idx)
+                    render()
+                elseif click_state.was_selected then
+                    -- Clicking on an already-selected item: just select it (don't clear others unless it's the only one)
+                    set_single_selection(row_idx)
+                    render()
+                end
+            else
+                -- Ctrl/Shift: use existing select_row logic
+                select_row(row_idx, event)
+                render()
+            end
+        end
+
+        -- Reset click state
+        click_state.down_time = 0
+        click_state.down_x = -1
+        click_state.down_y = -1
+        click_state.down_index = -1
+        click_state.is_dragging = false
+        click_state.was_selected = false
     end
 end
 
@@ -1294,6 +1423,7 @@ end
 
 mp.register_script_message("playlist-mbtn-left-down", relay_down)
 mp.register_script_message("playlist-mbtn-left-up", relay_up)
+mp.add_key_binding("Shift+a", "cadre_playlist_select_all", select_all, {repeatable = false})
 
 local function update_mbtn_binding()
     local osc_claimed = common.is_script_loaded("cadre_osc")

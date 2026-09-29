@@ -60,6 +60,7 @@ local ICON = {
 --------------------------------------------------------------------------------
 
 local osd = mp.create_osd_overlay("ass-events")
+local render_ctrl = common.render_controller(osd)
 local screen_w, screen_h = 1280, 720
 local mouse_x, mouse_y = -1, -1
 local bar_visible = false
@@ -156,10 +157,9 @@ local function render()
     if is_fullscreen and bar_visible then
         bar_visible = false
     end
-
+    local w, h = mp.get_osd_size()
     if not bar_visible or is_fullscreen then
-        osd.data = ""
-        osd:update()
+        render_ctrl:update("", w, h)
         publish_bounds(nil)
         return
     end
@@ -294,10 +294,8 @@ local function render()
         end
     )
 
-    osd.data = ass.text
-    osd.res_x = screen_w
-    osd.res_y = screen_h
-    osd:update()
+    local w, h = mp.get_osd_size()
+    render_ctrl:update(ass.text, w, h)
 end
 
 local function set_pressed_button(name)

@@ -218,6 +218,7 @@ end)
 --------------------------------------------------------------------------------
 
 local osd = mp.create_osd_overlay("ass-events")
+local render_ctrl = common.render_controller(osd)
 local screen_w, screen_h = mp.get_osd_size()
 osd.res_x = screen_w
 osd.res_y = screen_h
@@ -1929,13 +1930,10 @@ end
 local function render()
     hitboxes = common.new_hitboxes()
     local ass = assdraw.ass_new()
+    local w, h = mp.get_osd_size()
 
     if not bar_visible then
-        osd.data = ""
-        local w, h = mp.get_osd_size()
-        osd.res_x = w
-        osd.res_y = h
-        osd:update()
+        render_ctrl:update("", w, h)
         popup_geo = nil
         add_menu_geo = nil
         return
@@ -2177,11 +2175,7 @@ local function render()
         settings_menu_geo = nil
     end
 
-    local w, h = mp.get_osd_size()
-    osd.data = ass.text
-    osd.res_x = w
-    osd.res_y = h
-    osd:update()
+    render_ctrl:update(ass.text, w, h)
 end
 
 local function schedule_render()
@@ -2475,7 +2469,12 @@ local function on_mouse_move()
     end
 
     if mouse_in_active_zone() then
-        show_bar()
+        if not bar_visible then
+            show_bar()
+        else
+            restart_hide_timer()
+            render()
+        end
     elseif bar_visible then
         render()
     end
