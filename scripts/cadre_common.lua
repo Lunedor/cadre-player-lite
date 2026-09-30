@@ -44,6 +44,81 @@ function M.set_property_cached(name, value)
     end
 end
 
+function M.render_controller(osd, name)
+    local controller = {
+        name = name or "unnamed",
+        last_data = nil,
+        last_width = nil,
+        last_height = nil,
+
+        calls = 0,
+        updates = 0,
+        skipped = 0,
+        total_time = 0,
+        max_time = 0,
+        window_start = mp.get_time()
+    }
+
+    function controller:update(data, width, height, force)
+        local start = mp.get_time()
+
+        self.calls = self.calls + 1
+
+        if not force
+            and data == self.last_data
+            and width == self.last_width
+            and height == self.last_height then
+            self.skipped = self.skipped + 1
+            return false
+        end
+
+        self.last_data = data
+        self.last_width = width
+        self.last_height = height
+
+        osd.data = data
+        osd.res_x = width
+        osd.res_y = height
+        osd:update()
+
+        self.updates = self.updates + 1
+
+        local elapsed = mp.get_time() - start
+        self.total_time = self.total_time + elapsed
+        self.max_time = math.max(self.max_time, elapsed)
+
+        return true
+    end
+
+    function controller:report()
+        local elapsed = mp.get_time() - self.window_start
+
+        if elapsed <= 0 then
+            return
+        end
+
+        mp.msg.info(string.format(
+            "[cadre:%s] calls=%d updates=%d skipped=%d avg_update=%.3f ms max_update=%.3f ms update_rate=%.1f/s",
+            self.name,
+            self.calls,
+            self.updates,
+            self.skipped,
+            self.updates > 0 and (self.total_time / self.updates) * 1000 or 0,
+            self.max_time * 1000,
+            self.updates / elapsed
+        ))
+
+        self.calls = 0
+        self.updates = 0
+        self.skipped = 0
+        self.total_time = 0
+        self.max_time = 0
+        self.window_start = mp.get_time()
+    end
+
+    return controller
+end
+
 --------------------------------------------------------------------------------
 -- COLOR
 --------------------------------------------------------------------------------
