@@ -28,11 +28,6 @@ mp.register_script_message(
 --------------------------------------------------------------------------------
 
 local theme = common.theme
-local icon_size = theme.icon_size or 24
-local icon_bg_height = theme.icon_bg_height_osc
-    or theme.icon_bg_height
-    or (icon_size + 12)
-local icon_bg_width = theme.icon_bg_width_osc or icon_bg_height
 local cfg = {
     UI_FONT = theme.font_ui or theme.font_text or "Inter",
     ICON_FONT = theme.font_icon_osc or theme.font_icon or "Material Icons Outlined",
@@ -75,7 +70,7 @@ local cfg = {
     BUTTON_ROW_OFFSET = theme.button_row_offset_osc or theme.button_row_offset or 60,
 
     ICON_SPACING = theme.icon_spacing or 36,
-    ICON_SIZE = icon_size,
+    ICON_SIZE = theme.icon_size or 24,
     TIME_ITEM_WIDTH = theme.time_item_width_osc or 150,
     TIME_LABEL_OFFSET_Y = theme.time_label_offset_y or 16,
     TIME_LABEL_OUTLINE_WIDTH =
@@ -102,9 +97,10 @@ local cfg = {
     ICON_BG_ENABLED = theme.icon_bg_enabled_osc or false,
     ICON_BG_COLOR = common.bgr(theme.icon_bg_color_osc or theme.surface_color or "0D1117"),
     ICON_BG_ALPHA = theme.icon_bg_alpha_osc or "20",
-    ICON_BG_PAD_X = theme.icon_bg_pad_x_osc
-    or math.max(0, (icon_bg_width - icon_size) / 2),
-    ICON_BG_HEIGHT = icon_bg_height,
+    ICON_BG_PAD_X =
+    theme.icon_bg_pad_x_osc or
+	math.max(0, ((theme.icon_bg_width_osc or theme.icon_size + 12 or 36) - theme.icon_size or 24) / 2),
+    ICON_BG_HEIGHT = theme.icon_bg_height_osc or theme.icon_bg_height or theme.icon_size + 12 or 36,
     ICON_BG_RADIUS = theme.icon_bg_radius_osc or 0,
     ICON_BORDER_ENABLED = theme.icon_border_enabled_osc or false,
     ICON_BORDER_COLOR = common.bgr(theme.icon_border_color_osc or "FFFFFF"),
@@ -114,8 +110,9 @@ local cfg = {
     ICON_GROUP_BG_COLOR = common.bgr(theme.icon_group_bg_color_osc or theme.surface_color or "0D1117"),
     ICON_GROUP_BG_ALPHA = theme.icon_group_bg_alpha_osc or "40",
     ICON_GROUP_BG_PADDING = theme.icon_group_bg_padding_osc or 8,
-    ICON_GROUP_BG_HEIGHT = theme.icon_group_bg_height_osc
-    or (icon_bg_height + 16),
+    ICON_GROUP_BG_HEIGHT =
+    theme.icon_group_bg_height_osc or
+	theme.icon_bg_height_osc or theme.icon_bg_height + 16 or theme.icon_size + 28 or 52,
     ICON_GROUP_BG_RADIUS = theme.icon_group_bg_radius_osc or 0,
     ICON_GROUP_BORDER_ENABLED = theme.icon_group_border_enabled_osc or false,
     ICON_GROUP_BORDER_COLOR = common.bgr(theme.icon_group_border_color_osc or "FFFFFF"),
@@ -162,12 +159,7 @@ local ICON = {
 -- YOUTUBE CHAPTER LOADER
 --------------------------------------------------------------------------------
 
-local chapters_load_pending = false
-
 local function load_youtube_chapters()
-    if chapters_load_pending then
-        return -- Already loading
-    end
     local path = mp.get_property("path")
     if not path then
         return
@@ -175,53 +167,42 @@ local function load_youtube_chapters()
     if not (path:find("youtube%.com") or path:find("youtu%.be")) then
         return
     end
-    chapters_load_pending = true
-    mp.command_native_async(
+
+    local res =
+        mp.command_native(
         {
             name = "subprocess",
             playback_only = false,
             capture_stdout = true,
             args = {"yt-dlp", "-J", "--no-warnings", "--quiet", path}
-        },
-        function(success, result)
-            chapters_load_pending = false
-            if not success or not result or result.status ~= 0 or not result.stdout then
-                msg.warn("yt-dlp failed or returned no data")
-                return
+        }
+    )
+
+    if res and res.status == 0 and res.stdout then
+        local json = utils.parse_json(res.stdout)
+        if json and json.chapters then
+            local yt_chapters = {}
+            for i, ch in ipairs(json.chapters) do
+                yt_chapters[#yt_chapters + 1] = {
+                    time = ch.start_time,
+                    title = ch.title or ("Chapter " .. i)
+                }
             end
-            local json = utils.parse_json(result.stdout)
-            if json and json.chapters then
-                local yt_chapters = {}
-                for i, ch in ipairs(json.chapters) do
-                    yt_chapters[#yt_chapters + 1] = {
-                        time = ch.start_time,
-                        title = ch.title or ("Chapter " .. i)
-                    }
-                end
-                if #yt_chapters > 0 then
-                    mp.set_property_native("chapter-list", yt_chapters)
-                end
+            if #yt_chapters > 0 then
+                mp.set_property_native("chapter-list", yt_chapters)
             end
         end
-    )
+    end
 end
 
-mp.register_script_message("load-chapters-if-needed", function()
-    local existing = mp.get_property_native("chapter-list", {})
-    if #existing == 0 then
-        load_youtube_chapters()
-    end
-end)
+mp.register_event("file-loaded", load_youtube_chapters)
 
 --------------------------------------------------------------------------------
 -- STATE
 --------------------------------------------------------------------------------
 
 local osd = mp.create_osd_overlay("ass-events")
-local render_ctrl = common.render_controller(osd)
-local screen_w, screen_h = mp.get_osd_size()
-osd.res_x = screen_w
-osd.res_y = screen_h
+local screen_w, screen_h = 1280, 720
 local mouse_x, mouse_y = -1, -1
 
 local bar_visible = true
@@ -235,6 +216,7 @@ local volume = 100
 
 local volume_popup_open = false
 local add_menu_open = false
+local subtitle_menu_open = false
 local settings_menu_open = false
 local volume_dragging = false
 local volume_slider_dragging = false
@@ -242,16 +224,14 @@ local seek_dragging = false
 local hitboxes = {}
 local popup_geo = nil
 local add_menu_geo = nil
+local subtitle_menu_geo = nil
 local settings_menu_geo = nil
 local chapters = {}
 local hovered_chapter = nil
+local subtitle_menu_scroll = 0
+local subtitle_menu_max_scroll = 0
 local settings_menu_scroll = 0
 local settings_menu_max_scroll = 0
-local last_subtitle_sid = nil
-local last_osc_hover = nil
-local settings_track_list_mode = nil
-local settings_active_tab = nil
-local render_timer = nil
 
 --------------------------------------------------------------------------------
 -- HELPERS
@@ -453,7 +433,7 @@ end
 local DEFAULT_BUTTON_LAYOUT = {
     left = {"prev", "play", "next", "stop"},
     center = {},
-    right = {"volume", "add", "settings", "subtitle", "fullscreen", "playlist"}
+    right = {"volume", "add", "subtitle", "settings", "fullscreen", "playlist"}
 }
 
 local function configured_button_layout()
@@ -525,38 +505,6 @@ local function set_volume_from_x(px, button)
     ratio = math.min(1, math.max(0, ratio))
 
     mp.set_property_number("volume", ratio * 100)
-end
-
-
-local function get_subtitle_tracks()
-    local all_tracks = mp.get_property_native("track-list", {})
-    local tracks = {}
-    for _, track in ipairs(all_tracks) do
-        if track.type == "sub" then
-            tracks[#tracks + 1] = track
-        end
-    end
-    return tracks
-end
-
-local function subtitle_track_text(track, index)
-    local title = track.title
-    local language = track.lang
-    if title and title ~= "" then
-        return title, language
-    end
-    if language and language ~= "" then
-        return language, nil
-    end
-    if track["external-filename"] and track["external-filename"] ~= "" then
-        local filename = track["external-filename"]
-        filename = filename:match("([^/\\]+)$") or filename
-        filename = filename:gsub("%.[^%.]+$", "")
-        if filename ~= "" then
-            return filename, nil
-        end
-    end
-    return "Track " .. tostring(index), nil
 end
 
 local BUTTONS = {
@@ -660,57 +608,25 @@ local BUTTONS = {
         end
     },
     subtitle = {
-        icon = ICON.subs,
-
-        alpha = function()
+        icon = function()
             local sid = mp.get_property_native("sid")
-            local visible = mp.get_property_bool("sub-visibility", true)
-            if sid == nil or sid == "no" then
-                return "60"
-            end
-            for _, track in ipairs(mp.get_property_native("track-list", {})) do
-                if track.type == "sub" and track.id == sid then
-                    return visible and "00" or "60"
-                end
-            end
-            return "60"
+            local has_sub = sid ~= nil and sid ~= "no" and type(sid) == "number"
+            return has_sub and ICON.subs or ICON.subs
         end,
         click = function()
-            local sid = mp.get_property_native("sid")
-            local has_selected_track = sid ~= nil and sid ~= "no"
-            if has_selected_track then
-                mp.commandv("cycle", "sub-visibility")
-                return
-            end
-            if last_subtitle_sid ~= nil then
-                for _, track in ipairs(get_subtitle_tracks()) do
-                    if track.id == last_subtitle_sid then
-                        mp.set_property_number("sid", last_subtitle_sid)
-                        mp.set_property_bool("sub-visibility", true)
-                        return
-                    end
-                end
-            end
-            local tracks = get_subtitle_tracks()
-            if #tracks == 0 then
-                return
-            end
-            last_subtitle_sid = tracks[1].id
-            mp.set_property_number("sid", last_subtitle_sid)
-            mp.set_property_bool("sub-visibility", true)
+            subtitle_menu_open = not subtitle_menu_open
+            settings_menu_open = false
+            volume_popup_open = false
+            add_menu_open = false
         end
     },
     settings = {
         icon = ICON.settings,
         click = function()
             settings_menu_open = not settings_menu_open
+            subtitle_menu_open = false
             volume_popup_open = false
             add_menu_open = false
-
-            if settings_menu_open then
-                settings_active_tab = "video"
-                settings_menu_scroll = 0
-            end
         end
     }
 }
@@ -1068,6 +984,44 @@ local SET_MENU_TAB_H   = 40
 local SET_MENU_FOOTER_H = 46
 local SET_MENU_SECTION_TITLE_H = 30
 
+-- Returns all subtitle tracks from the track-list property.
+local function get_subtitle_tracks()
+    local all_tracks = mp.get_property_native("track-list", {})
+    local tracks = {}
+    for _, track in ipairs(all_tracks) do
+        if track.type == "sub" then
+            tracks[#tracks + 1] = track
+        end
+    end
+    return tracks
+end
+
+local function subtitle_track_text(track, index)
+    local title = track.title
+    local language = track.lang
+    if title and title ~= "" then
+        return title, language
+    end
+    if language and language ~= "" then
+        return language, nil
+    end
+    if track["external-filename"] and track["external-filename"] ~= "" then
+        local filename = track["external-filename"]
+        filename = filename:match("([^/\\]+)$") or filename
+        filename = filename:gsub("%.[^%.]+$", "")
+        if filename ~= "" then
+            return filename, nil
+        end
+    end
+    return "Track " .. tostring(index), nil
+end
+
+local function truncate_text(text, max_chars)
+    if not text or text == "" then return "" end
+    if #text <= max_chars then return text end
+    return text:sub(1, max_chars - 1) .. "…"
+end
+
 -- Compute the geometry for the unified settings panel.
 local function compute_settings_menu_geo()
     local margin = 20
@@ -1130,86 +1084,72 @@ local function draw_step_row(ass, geo, row_y, label, value_str,
     add_hitbox(plus_name,  plus_x  - 18, row_y, plus_x  + 18, row_y + SET_MENU_ROW_H, plus_cb)
 end
 
+-- A label | choice-chip row.
+-- choices = { {label, value, current} }
+local function draw_choice_row(ass, geo, row_y, label, choices, prefix, on_pick)
+    local cy   = row_y + SET_MENU_ROW_H / 2
+    common.draw_text(ass, label, geo.cx1, cy, cfg.FONT_SIZE - 1, cfg.TEXT, "00", 4, false)
 
-local measure_osd = mp.create_osd_overlay("ass-events")
-    measure_osd.hidden = true
-    measure_osd.compute_bounds = true
+    local chip_w   = 56
+    local chip_h   = 24
+    local chip_gap = 6
+    local total_w  = #choices * chip_w + (#choices - 1) * chip_gap
+    local start_x  = geo.cx2 - total_w - 14
 
-local function measure_text_width(text, font_size, font)
-    local f = font or cfg.UI_FONT
-    local osd_w, osd_h = mp.get_osd_size()
+    for i, ch in ipairs(choices) do
+        local cx  = start_x + (i - 1) * (chip_w + chip_gap) + chip_w / 2
+        local x1  = cx - chip_w / 2
+        local x2  = cx + chip_w / 2
+        local y1  = cy - chip_h / 2
+        local y2  = cy + chip_h / 2
 
-    measure_osd.res_x = osd_w
-    measure_osd.res_y = osd_h
+        if ch.current then
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_FG, "D0")
+            common.draw_text(ass, ch.label, cx, cy, cfg.FONT_SIZE - 3, cfg.BARBG, "00", 5, false)
+        else
+            common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_BG, "20")
+            common.draw_text(ass, ch.label, cx, cy, cfg.FONT_SIZE - 3, cfg.TEXT,  "30", 5, false)
+        end
 
-    measure_osd.data =
-        string.format(
-        "{\\pos(1000,1000)\\an5\\fn%s\\fs%d" .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
-        f,
-        font_size,
-        text
-    )
-
-    local res = measure_osd:update()
-
-    if res and res.x0 and res.x1 then
-        return res.x1 - res.x0
+        local name = prefix .. "_" .. i
+        local cb   = on_pick
+        local val  = ch.value
+        add_hitbox(name, x1, row_y, x2, row_y + SET_MENU_ROW_H, function() cb(val) end)
     end
-
-    -- Fallback only if libass does not return bounds.
-    return utf8_char_count(text) * font_size * 0.5
 end
 
 -- Scrollable subtitle track list row.
 local function draw_subtitle_track_row(ass, geo, row_y, title, language, selected, hbname, cb)
-    local vy1 = math.max(row_y, geo.body_y1)
-    local vy2 = math.min(row_y + SET_MENU_ROW_H, geo.body_y2)
+    if row_y + SET_MENU_ROW_H <= geo.body_y1 then return end
+    if row_y >= geo.body_y2 then return end
 
-    if vy2 - vy1 < SET_MENU_ROW_H then
-        return
-    end
+    local vy1    = math.max(row_y, geo.body_y1)
+    local vy2    = math.min(row_y + SET_MENU_ROW_H, geo.body_y2)
     local center = row_y + SET_MENU_ROW_H / 2
-
-    -- Measure how much space language will take
-    local lang_w = 0
-    if language and language ~= "" then
-        lang_w = measure_text_width(language, cfg.FONT_SIZE - 2, cfg.UI_FONT)
-    end
-
-    local text_start = geo.cx1 + 40
-    local right_margin = 12
-    local max_title_w = math.max(20, geo.cx2 - right_margin - text_start - lang_w)
-
-    -- Width-safe truncation
-    local safe_title = title
-    if measure_text_width(title, cfg.FONT_SIZE - 1, cfg.UI_FONT) > max_title_w then
-        local lo, hi = 0, utf8_char_count(title)
-        while lo < hi do
-            local mid = math.ceil((lo + hi) / 2)
-            local cand = title:sub(1, mid) .. "…"
-            if measure_text_width(cand, cfg.FONT_SIZE - 1, cfg.UI_FONT) <= max_title_w then
-                lo = mid
-            else
-                hi = mid - 1
-            end
-        end
-        safe_title = title:sub(1, lo) .. "…"
-    end
 
     if selected then
         common.draw_rrect(ass, geo.cx1, vy1 + 2, geo.cx2 - 8, vy2 - 2, 6, cfg.TRACK_FG, "D0")
     end
 
-    common.draw_text(ass, selected and "●" or "○", geo.cx1 + 14, center,
-        cfg.FONT_SIZE, selected and cfg.TRACK_FG or cfg.ICON_COLOR,
-        selected and "00" or cfg.ICON_DIM_A, 5, false)
-
-    common.draw_text(ass, safe_title, text_start, center,
-        cfg.FONT_SIZE - 1, cfg.TEXT, "00", 4, false)
-
+    common.draw_text(
+        ass, selected and "●" or "○",
+        geo.cx1 + 14, center,
+        cfg.FONT_SIZE,
+        selected and cfg.TRACK_FG or cfg.ICON_COLOR,
+        selected and "00" or cfg.ICON_DIM_A,
+        5, false
+    )
+    common.draw_text(
+        ass, truncate_text(title, 28),
+        geo.cx1 + 40, center,
+        cfg.FONT_SIZE - 1, cfg.TEXT, "00", 4, false
+    )
     if language and language ~= "" then
-        common.draw_text(ass, language, geo.cx2 - 12, center,
-            cfg.FONT_SIZE - 2, cfg.TEXT, "35", 6, false)
+        common.draw_text(
+            ass, truncate_text(language, 8),
+            geo.cx2 - 12, center,
+            cfg.FONT_SIZE - 2, cfg.TEXT, "35", 6, false
+        )
     end
 
     add_hitbox(hbname, geo.cx1, vy1, geo.cx2, vy2, cb)
@@ -1223,7 +1163,7 @@ local function draw_section_title(ass, geo, y, text)
     )
 end
 
--- Subtitles tab
+-- ── Subtitles tab ──────────────────────────────────────────────────────────
 local function render_subtitles_tab(ass, geo)
     local sub_delay   = mp.get_property_number("sub-delay",        0)    or 0
     local sub_scale   = mp.get_property_number("sub-scale",        1.0)  or 1.0
@@ -1247,26 +1187,20 @@ local function render_subtitles_tab(ass, geo)
 
     draw_step_row(ass, geo, y,
         "Position", string.format("%d%%", math.floor(sub_pos + 0.5)),
-        "set_sub_pos_minus",
-        function() mp.set_property_number("sub-pos", math.max(0,   sub_pos - 1)) end,
-        "set_sub_pos_plus",
-        function() mp.set_property_number("sub-pos", math.min(150, sub_pos + 1)) end)
+        "set_sub_pos_minus",    function() mp.set_property_number("sub-pos", math.max(0,   sub_pos - 1)) end,
+        "set_sub_pos_plus",     function() mp.set_property_number("sub-pos", math.min(150, sub_pos + 1)) end)
     y = y + SET_MENU_ROW_H
 
     draw_step_row(ass, geo, y,
         "Outline",  string.format("%.2f", sub_outline),
-        "set_sub_outline_minus",
-        function() mp.set_property_number("sub-outline-size", math.max(0,  sub_outline - 0.15)) end,
-        "set_sub_outline_plus",
-        function() mp.set_property_number("sub-outline-size", math.min(10, sub_outline + 0.15)) end)
+        "set_sub_outline_minus", function() mp.set_property_number("sub-outline-size", math.max(0,  sub_outline - 0.15)) end,
+        "set_sub_outline_plus",  function() mp.set_property_number("sub-outline-size", math.min(10, sub_outline + 0.15)) end)
     y = y + SET_MENU_ROW_H
 
     draw_step_row(ass, geo, y,
         "Shadow",   string.format("%.1f", sub_shadow),
-        "set_sub_shadow_minus",
-        function() mp.set_property_number("sub-shadow-offset", math.max(0,  sub_shadow - 0.5)) end,
-        "set_sub_shadow_plus",
-        function() mp.set_property_number("sub-shadow-offset", math.min(10, sub_shadow + 0.5)) end)
+        "set_sub_shadow_minus",  function() mp.set_property_number("sub-shadow-offset", math.max(0,  sub_shadow - 0.5)) end,
+        "set_sub_shadow_plus",   function() mp.set_property_number("sub-shadow-offset", math.min(10, sub_shadow + 0.5)) end)
     y = y + SET_MENU_ROW_H
 
     draw_sep(ass, geo, y + 2)
@@ -1279,206 +1213,110 @@ local function render_subtitles_tab(ass, geo)
     y = y + 2
 
     -- Scrollable track list
-    local sub_tracks = get_subtitle_tracks()
-    local current_sid_native = mp.get_property_native("sid")
-    local current_sid = mp.get_property("sid")
+    local sub_tracks   = get_subtitle_tracks()
+    local current_sid  = mp.get_property_native("sid")
+    local list_h       = geo.body_y2 - y
+    local visible_rows = math.max(1, math.floor(list_h / SET_MENU_ROW_H))
+    local total_rows   = #sub_tracks + 1
+    settings_menu_max_scroll = math.max(0, total_rows - visible_rows)
+    settings_menu_scroll     = math.max(0, math.min(settings_menu_scroll, settings_menu_max_scroll))
 
+    -- Override body clip region temporarily for the track list
     local track_area_y1 = y
+    local first_y       = track_area_y1 - settings_menu_scroll * SET_MENU_ROW_H
 
-    local track_area_y2 = geo.footer_y1 - 10
-
-    if track_area_y2 < track_area_y1 + SET_MENU_ROW_H then
-        track_area_y2 = track_area_y1 + SET_MENU_ROW_H
-    end
-
-    local list_h = track_area_y2 - track_area_y1
-    local visible_rows = math.max(
-        1,
-        math.floor(list_h / SET_MENU_ROW_H)
-    )
-
-    local total_rows = #sub_tracks + 1
-
-    settings_menu_max_scroll = math.max(
-        0,
-        total_rows - visible_rows
-    )
-
-    settings_menu_scroll = math.max(
-        0,
-        math.min(settings_menu_scroll, settings_menu_max_scroll)
-    )
-
-    local first_y = track_area_y1 - settings_menu_scroll * SET_MENU_ROW_H
-
-    local sub_geo = {
-        cx1 = geo.cx1,
-        cx2 = geo.cx2,
-        body_y1 = track_area_y1,
-        body_y2 = track_area_y2,
+    -- "Disable" row
+    local disabled = (current_sid == nil or current_sid == "no")
+    local sub_geo  = {
+        cx1 = geo.cx1, cx2 = geo.cx2,
+        body_y1 = track_area_y1, body_y2 = geo.body_y2
     }
-
-    local disabled = (current_sid == "no")
-
-    draw_subtitle_track_row(
-        ass,
-        sub_geo,
-        first_y,
-        "Disable subtitles",
-        nil,
-        disabled,
-        "set_sub_disable",
-        function()
-            mp.set_property("sid", "no")
-        end
-    )
+    draw_subtitle_track_row(ass, sub_geo, first_y, "Disable subtitles", nil, disabled,
+        "set_sub_disable", function() mp.set_property("sid", "no") end)
 
     for i, track in ipairs(sub_tracks) do
-        local row_y = first_y + i * SET_MENU_ROW_H
-        local title, language = subtitle_track_text(track, i)
-
-        draw_subtitle_track_row(
-            ass,
-            sub_geo,
-            row_y,
-            title,
-            language,
-            current_sid_native == track.id,
+        local row_y    = first_y + i * SET_MENU_ROW_H
+        local ttl, lng = subtitle_track_text(track, i)
+        draw_subtitle_track_row(ass, sub_geo, row_y, ttl, lng,
+            current_sid == track.id,
             "set_sub_track_" .. i,
-            function()
-                last_subtitle_sid = track.id
-                mp.set_property_number("sid", track.id)
-                mp.set_property_bool("sub-visibility", true)
-            end
-        )
+            function() mp.set_property_number("sid", track.id) end)
     end
 
+    -- Scrollbar
     if settings_menu_max_scroll > 0 then
         local sb_x1 = geo.cx2 - 5
         local sb_x2 = geo.cx2 - 2
-
-        common.draw_rrect(
-            ass,
-            sb_x1,
-            track_area_y1 + 2,
-            sb_x2,
-            track_area_y2 - 2,
-            2,
-            cfg.TRACK_BG,
-            "30"
-        )
-
-        local thumb_h = math.max(
-            20,
-            list_h * visible_rows / total_rows
-        )
-
-        local thumb_y =
-            track_area_y1 +
-            (list_h - thumb_h) *
-            settings_menu_scroll / settings_menu_max_scroll
-
-        common.draw_rrect(
-            ass,
-            sb_x1 - 1,
-            thumb_y,
-            sb_x2 + 1,
-            thumb_y + thumb_h,
-            3,
-            cfg.TRACK_FG,
-            "00"
-        )
+        common.draw_rrect(ass, sb_x1, track_area_y1 + 2, sb_x2, geo.body_y2 - 2, 2, cfg.TRACK_BG, "30")
+        local thumb_h  = math.max(20, list_h * (visible_rows / total_rows))
+        local thumb_y  = track_area_y1 + (list_h - thumb_h) * (settings_menu_scroll / settings_menu_max_scroll)
+        common.draw_rrect(ass, sb_x1 - 1, thumb_y, sb_x2 + 1, thumb_y + thumb_h, 3, cfg.TRACK_FG, "00")
     end
 end
 
--- Video tab
+-- ── Video tab ──────────────────────────────────────────────────────────────
 local function render_video_tab(ass, geo)
-    if not settings_track_list_mode then
-        settings_track_list_mode = "audio"
-    end
+    settings_menu_max_scroll = 0
 
-    local speed = mp.get_property_number("speed", 1.0) or 1.0
+    local speed   = mp.get_property_number("speed", 1.0) or 1.0
     local keepasp = mp.get_property_bool("keepaspect", true)
     local unscaled = mp.get_property("video-unscaled") or "no"
-    local aspect = mp.get_property_number("video-aspect-override", -1) or -1
+    local aspect  = mp.get_property_number("video-aspect-override", -1) or -1
 
     local y = geo.body_y1 + 4
 
-    -- Speed
-    draw_step_row(
-        ass,
-        geo,
-        y,
-        "Speed",
-        string.format("%.2fx", speed),
-        "set_speed_minus",
-        function()
-            mp.set_property_number("speed", math.max(0.25, speed - 0.25))
-        end,
-        "set_speed_plus",
-        function()
-            mp.set_property_number("speed", math.min(4.0, speed + 0.25))
-        end
-    )
-
+    -- Speed row
+    draw_step_row(ass, geo, y,
+        "Speed", string.format("%.2fx", speed),
+        "set_speed_minus", function() mp.set_property_number("speed", math.max(0.25, speed - 0.25)) end,
+        "set_speed_plus",  function() mp.set_property_number("speed", math.min(4.0,  speed + 0.25)) end)
     y = y + SET_MENU_ROW_H
+
     draw_sep(ass, geo, y + 2)
-    y = y + 6
+    y = y + 12
 
     -- Aspect Ratio
     draw_section_title(ass, geo, y, "Aspect Ratio")
     y = y + SET_MENU_SECTION_TITLE_H
 
     local asp_choices = {
-        {label = "Auto", value = -1, current = aspect < 0},
-        {label = "4:3", value = 4 / 3, current = math.abs(aspect - 4 / 3) < 0.02},
-        {label = "16:9", value = 16 / 9, current = math.abs(aspect - 16 / 9) < 0.02},
-        {label = "2.39:1", value = 2.39, current = math.abs(aspect - 2.39) < 0.02},
+        { label = "Auto",    value = -1,          current = (aspect < 0) },
+        { label = "4:3",     value = 4/3,          current = (math.abs(aspect - 4/3)   < 0.02) },
+        { label = "16:9",    value = 16/9,         current = (math.abs(aspect - 16/9)  < 0.02) },
+        { label = "2.39:1",  value = 2.39,         current = (math.abs(aspect - 2.39)  < 0.02) },
     }
-
-    local chip_w = 62
-    local chip_h = 26
+    -- Widen chips slightly for this row
+    local chip_w  = 62
+    local chip_h  = 26
     local chip_gap = 6
-    local chip_cy = y + SET_MENU_ROW_H / 2
+    local cy      = y + SET_MENU_ROW_H / 2
     local total_w = #asp_choices * chip_w + (#asp_choices - 1) * chip_gap
     local start_x = geo.cx2 - total_w - 14
-
-    for i, choice in ipairs(asp_choices) do
+    for i, ch in ipairs(asp_choices) do
         local cx = start_x + (i - 1) * (chip_w + chip_gap) + chip_w / 2
         local x1 = cx - chip_w / 2
         local x2 = cx + chip_w / 2
-        local y1 = chip_cy - chip_h / 2
-        local y2 = chip_cy + chip_h / 2
-
-        if choice.current then
+        local y1 = cy - chip_h / 2
+        local y2 = cy + chip_h / 2
+        if ch.current then
             common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_FG, "D0")
-            common.draw_text(ass, choice.label, cx, chip_cy,
-                cfg.FONT_SIZE - 3, cfg.TEXT, "00", 5, false)
+            common.draw_text(ass, ch.label, cx, cy, cfg.FONT_SIZE - 3, cfg.BARBG, "00", 5, false)
         else
             common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_BG, "20")
-            common.draw_text(ass, choice.label, cx, chip_cy,
-                cfg.FONT_SIZE - 3, cfg.TEXT, "30", 5, false)
+            common.draw_text(ass, ch.label, cx, cy, cfg.FONT_SIZE - 3, cfg.TEXT,  "30", 5, false)
         end
-
-        local value = choice.value
-
-        add_hitbox(
-            "set_asp_" .. i,
-            x1,
-            y,
-            x2,
-            y + SET_MENU_ROW_H,
+        local val = ch.value
+        add_hitbox("set_asp_" .. i, x1, y, x2, y + SET_MENU_ROW_H,
             function()
-                if value < 0 then
+                if val < 0 then
                     mp.set_property("video-aspect-override", "-1")
                 else
-                    mp.set_property_number("video-aspect-override", value)
+                    mp.set_property_number("video-aspect-override", val)
                 end
-            end
-        )
+            end)
     end
-
     y = y + SET_MENU_ROW_H
+
     draw_sep(ass, geo, y + 2)
     y = y + 12
 
@@ -1486,349 +1324,82 @@ local function render_video_tab(ass, geo)
     draw_section_title(ass, geo, y, "Display Mode")
     y = y + SET_MENU_SECTION_TITLE_H
 
-    local is_unscaled = unscaled ~= "no" and unscaled ~= "" and unscaled ~= false
-    local is_fill = not is_unscaled and not keepasp
-    local is_normal = not is_unscaled and keepasp
+    local is_unscaled = (unscaled ~= "no" and unscaled ~= "" and unscaled ~= false)
+    local is_fill     = (not is_unscaled) and (not keepasp)
+    local is_normal   = (not is_unscaled) and keepasp
 
-    local display_choices = {
-        {label = "Normal", current = is_normal},
-        {label = "Fill", current = is_fill},
-        {label = "Unscaled", current = is_unscaled},
+    local disp_choices = {
+        { label = "Normal",   current = is_normal },
+        { label = "Fill",     current = is_fill },
+        { label = "Unscaled", current = is_unscaled },
     }
-
-    local display_chip_w = 74
-    local display_chip_h = 26
-    local display_chip_gap = 6
-    local display_cy = y + SET_MENU_ROW_H / 2
-    local display_total_w =
-        #display_choices * display_chip_w +
-        (#display_choices - 1) * display_chip_gap
-    local display_start_x = geo.cx2 - display_total_w - 14
-
-    for i, choice in ipairs(display_choices) do
-        local cx =
-            display_start_x +
-            (i - 1) * (display_chip_w + display_chip_gap) +
-            display_chip_w / 2
-
-        local x1 = cx - display_chip_w / 2
-        local x2 = cx + display_chip_w / 2
-        local y1 = display_cy - display_chip_h / 2
-        local y2 = display_cy + display_chip_h / 2
-
-        if choice.current then
+    local dchip_w   = 74
+    local dchip_h   = 26
+    local dchip_gap = 6
+    local dcy       = y + SET_MENU_ROW_H / 2
+    local dtotal_w  = #disp_choices * dchip_w + (#disp_choices - 1) * dchip_gap
+    local dstart_x  = geo.cx2 - dtotal_w - 14
+    for i, ch in ipairs(disp_choices) do
+        local cx = dstart_x + (i - 1) * (dchip_w + dchip_gap) + dchip_w / 2
+        local x1 = cx - dchip_w / 2
+        local x2 = cx + dchip_w / 2
+        local y1 = dcy - dchip_h / 2
+        local y2 = dcy + dchip_h / 2
+        if ch.current then
             common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_FG, "D0")
-            common.draw_text(ass, choice.label, cx, display_cy,
-                cfg.FONT_SIZE - 3, cfg.TEXT, "00", 5, false)
+            common.draw_text(ass, ch.label, cx, dcy, cfg.FONT_SIZE - 3, cfg.BARBG, "00", 5, false)
         else
             common.draw_rrect(ass, x1, y1, x2, y2, 6, cfg.TRACK_BG, "20")
-            common.draw_text(ass, choice.label, cx, display_cy,
-                cfg.FONT_SIZE - 3, cfg.TEXT, "30", 5, false)
+            common.draw_text(ass, ch.label, cx, dcy, cfg.FONT_SIZE - 3, cfg.TEXT,  "30", 5, false)
         end
-
-        local index = i
-
-        add_hitbox(
-            "set_display_" .. i,
-            x1,
-            y,
-            x2,
-            y + SET_MENU_ROW_H,
-            function()
-                if index == 1 then
-                    mp.set_property_bool("keepaspect", true)
-                    mp.set_property("video-unscaled", "no")
-                elseif index == 2 then
-                    mp.set_property_bool("keepaspect", false)
-                    mp.set_property("video-unscaled", "no")
-                else
-                    mp.set_property_bool("keepaspect", true)
-                    mp.set_property("video-unscaled", "yes")
-                end
+        local idx = i
+        add_hitbox("set_disp_" .. i, x1, y, x2, y + SET_MENU_ROW_H, function()
+            if idx == 1 then     -- Normal
+                mp.set_property_bool("keepaspect", true)
+                mp.set_property("video-unscaled", "no")
+            elseif idx == 2 then -- Fill
+                mp.set_property_bool("keepaspect", false)
+                mp.set_property("video-unscaled", "no")
+            else                 -- Unscaled
+                mp.set_property_bool("keepaspect", true)
+                mp.set_property("video-unscaled", "yes")
             end
-        )
+        end)
     end
-
     y = y + SET_MENU_ROW_H
+
     draw_sep(ass, geo, y + 2)
-    y = y + 2
+    y = y + 12
 
-    local audio_tracks = {}
+    -- Deinterlace toggle
+    local deint = mp.get_property_bool("deinterlace", false)
+    local deint_label = deint and "● Deinterlace" or "○ Deinterlace"
+    local deint_cy = y + SET_MENU_ROW_H / 2
+    common.draw_text(ass, deint_label, geo.cx1, deint_cy, cfg.FONT_SIZE - 1,
+        deint and cfg.TRACK_FG or cfg.TEXT, deint and "00" or "30", 4, false)
+    add_hitbox("set_deint", geo.cx1, y, geo.cx2, y + SET_MENU_ROW_H,
+        function() mp.commandv("cycle", "deinterlace") end)
+    y = y + SET_MENU_ROW_H
 
-    for _, track in ipairs(mp.get_property_native("track-list", {})) do
-        if track.type == "audio" then
-            audio_tracks[#audio_tracks + 1] = track
-        end
-    end
-
-    local editions = mp.get_property_native("edition-list", {}) or {}
-
-    -- Audio / Editions tabs
-    local tab_y1 = y
-    local tab_y2 = y + SET_MENU_TAB_H
-    local tab_w = (geo.cx2 - geo.cx1) / 2
-    local tab_cy = (tab_y1 + tab_y2) / 2
-
-    local audio_tab_x1 = geo.cx1
-    local audio_tab_x2 = audio_tab_x1 + tab_w
-
-    local edition_tab_x1 = audio_tab_x2
-    local edition_tab_x2 = geo.cx2
-
-    local audio_active = settings_track_list_mode == "audio"
-    local edition_active = settings_track_list_mode == "edition"
-
-    -- Audio tab text
-    common.draw_text(
-        ass,
-        "Audio (" .. tostring(#audio_tracks) .. ")",
-        (audio_tab_x1 + audio_tab_x2) / 2,
-        tab_cy,
-        cfg.FONT_SIZE - 1,
-        audio_active and cfg.TRACK_FG or cfg.TEXT,
-        audio_active and "00" or "40",
-        5,
-        false
-    )
-
-    -- Editions tab text
-    common.draw_text(
-        ass,
-        "Editions (" .. tostring(#editions) .. ")",
-        (edition_tab_x1 + edition_tab_x2) / 2,
-        tab_cy,
-        cfg.FONT_SIZE - 1,
-        edition_active and cfg.TRACK_FG or cfg.TEXT,
-        edition_active and "00" or "40",
-        5,
-        false
-    )
-
-    -- Accent underline for active tab
-    if audio_active then
-        common.draw_rrect(
-            ass,
-            audio_tab_x1 + 8,
-            tab_y2 - 3,
-            audio_tab_x2 - 8,
-            tab_y2,
-            1,
-            cfg.TRACK_FG,
-            "00"
-        )
-    else
-        common.draw_rrect(
-            ass,
-            edition_tab_x1 + 8,
-            tab_y2 - 3,
-            edition_tab_x2 - 8,
-            tab_y2,
-            1,
-            cfg.TRACK_FG,
-            "00"
-        )
-    end
-
-    draw_sep(ass, geo, tab_y2)
-
-    add_hitbox(
-        "set_selector_audio",
-        audio_tab_x1,
-        tab_y1,
-        audio_tab_x2,
-        tab_y2,
+    -- Hardware decoding toggle
+    local hwdec = mp.get_property("hwdec-current") or "no"
+    local hw_on = (hwdec ~= "no" and hwdec ~= "")
+    local hw_label = hw_on and "● HW Decoding" or "○ HW Decoding"
+    local hw_cy = y + SET_MENU_ROW_H / 2
+    common.draw_text(ass, hw_label, geo.cx1, hw_cy, cfg.FONT_SIZE - 1,
+        hw_on and cfg.TRACK_FG or cfg.TEXT, hw_on and "00" or "30", 4, false)
+    add_hitbox("set_hwdec", geo.cx1, y, geo.cx2, y + SET_MENU_ROW_H,
         function()
-            settings_track_list_mode = "audio"
-            settings_menu_scroll = 0
-        end
-    )
-
-    add_hitbox(
-        "set_selector_edition",
-        edition_tab_x1,
-        tab_y1,
-        edition_tab_x2,
-        tab_y2,
-        function()
-            settings_track_list_mode = "edition"
-            settings_menu_scroll = 0
-        end
-    )
-
-    y = tab_y2 + 1
-
-    local list_y1 = y
-    local list_y2 = geo.body_y2
-    local list_geo = {
-        cx1 = geo.cx1,
-        cx2 = geo.cx2,
-        body_y1 = list_y1,
-        body_y2 = list_y2,
-    }
-
-    local rows = {}
-    local current_id
-    local current_aid
-    local disabled
-    local disable_name
-    local disable_cb
-    local show_disable_row
-    local item_prefix
-
-    if settings_track_list_mode == "audio" then
-        current_id = mp.get_property_native("aid")
-        current_aid = mp.get_property("aid")
-        show_disable_row = true
-        disabled = (current_aid == "no")
-        disable_name = "set_audio_disable"
-        item_prefix = "set_audio_track_"
-
-        disable_cb = function()
-            mp.set_property("aid", "no")
-        end
-
-        for i, track in ipairs(audio_tracks) do
-            local title = track.title
-            local language = track.lang
-
-            if not title or title == "" then
-                if language and language ~= "" then
-                    title = language
-                    language = nil
-                else
-                    title = "Audio track " .. tostring(i)
-                end
+            if hw_on then
+                mp.set_property("hwdec", "no")
+            else
+                mp.set_property("hwdec", "auto-safe")
             end
-
-            rows[#rows + 1] = {
-                id = track.id,
-                title = title,
-                language = language,
-                callback = function()
-                    mp.set_property_number("aid", track.id)
-                end
-            }
-        end
-    else
-        current_id = mp.get_property_number("current-edition", -1)
-        show_disable_row = false
-        item_prefix = "set_edition_"
-
-        for i, edition in ipairs(editions) do
-            local edition_id = edition.id
-            if edition_id == nil then
-                edition_id = i - 1
-            end
-
-            local title = edition.title
-            if not title or title == "" then
-                title = "Edition " .. tostring(edition_id + 1)
-            end
-
-            if edition.default then
-                title = title .. " (default)"
-            end
-
-            rows[#rows + 1] = {
-                id = edition_id,
-                title = title,
-                language = nil,
-                callback = function()
-                    mp.set_property_number("edition", edition_id)
-                end
-            }
-        end
-    end
-
-    local total_rows = #rows + (show_disable_row and 1 or 0)
-    local viewport_h = list_y2 - list_y1
-    local visible_rows = math.max(
-        1,
-        math.floor((viewport_h + 2) / SET_MENU_ROW_H)
-    )
-    settings_menu_max_scroll = math.max(0, total_rows - visible_rows)
-    settings_menu_scroll = math.max(
-        0,
-        math.min(settings_menu_scroll, settings_menu_max_scroll)
-    )
-
-    local first_y = list_y1 - settings_menu_scroll * SET_MENU_ROW_H
-    local offset = 0
-
-    if show_disable_row then
-        draw_subtitle_track_row(
-            ass,
-            list_geo,
-            first_y,
-            "Disable audio",
-            nil,
-            disabled,
-            disable_name,
-            disable_cb
-        )
-
-        offset = 1
-    end
-
-    for i, row in ipairs(rows) do
-        local row_y = first_y + (offset + i - 1) * SET_MENU_ROW_H
-
-        draw_subtitle_track_row(
-            ass,
-            list_geo,
-            row_y,
-            row.title,
-            row.language,
-            current_id == row.id,
-            item_prefix .. i,
-            row.callback
-        )
-    end
-
-    -- Scrollbar only for this fixed list area
-    if settings_menu_max_scroll > 0 and total_rows > 0 then
-        local sb_x1 = geo.cx2 - 5
-        local sb_x2 = geo.cx2 - 2
-
-        common.draw_rrect(
-            ass,
-            sb_x1,
-            list_y1 + 2,
-            sb_x2,
-            list_y2 - 2,
-            2,
-            cfg.TRACK_BG,
-            "30"
-        )
-
-        local thumb_h = math.max(
-            20,
-            viewport_h * visible_rows / total_rows
-        )
-
-        local thumb_y =
-            list_y1 +
-            (viewport_h - thumb_h) *
-            settings_menu_scroll / settings_menu_max_scroll
-
-        common.draw_rrect(
-            ass,
-            sb_x1 - 1,
-            thumb_y,
-            sb_x2 + 1,
-            thumb_y + thumb_h,
-            3,
-            cfg.TRACK_FG,
-            "00"
-        )
-    end
+        end)
 end
 
--- Main unified render
+-- ── Main unified render ────────────────────────────────────────────────────
 local function render_settings_menu(ass, geo)
-    if settings_active_tab ~= "subtitles" and settings_active_tab ~= "video" then
-        settings_active_tab = "video"
-    end
     -- Background card
     common.draw_rrect(ass, geo.card_x1, geo.card_y1, geo.card_x2, geo.card_y2,
         SET_MENU_RADIUS, cfg.BARBG, "00")
@@ -1891,7 +1462,7 @@ local function render_settings_menu(ass, geo)
     if settings_active_tab == "subtitles" then
         common.draw_text(ass, "Reset",
             geo.cx1 + 28, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
-            cfg.FONT_SIZE, cfg.TEXT, "35", 5, false)
+            cfg.FONT_SIZE - 1, cfg.TEXT, "35", 5, false)
         add_hitbox("set_sub_reset", geo.cx1, geo.footer_y1, geo.cx1 + 110, geo.footer_y2,
             function()
                 mp.set_property_number("sub-delay",        0)
@@ -1901,9 +1472,9 @@ local function render_settings_menu(ass, geo)
                 mp.set_property_number("sub-shadow-offset",0)
             end)
     else
-        common.draw_text(ass, "Reset",
-            geo.cx1 + 28, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
-            cfg.FONT_SIZE, cfg.TEXT, "35", 5, false)
+        common.draw_text(ass, "Reset Speed",
+            geo.cx1 + 46, geo.footer_y1 + SET_MENU_FOOTER_H / 2,
+            cfg.FONT_SIZE - 1, cfg.TEXT, "35", 5, false)
         add_hitbox("set_vid_reset", geo.cx1, geo.footer_y1, geo.cx1 + 120, geo.footer_y2,
             function()
                 mp.set_property_number("speed", 1.0)
@@ -1930,10 +1501,10 @@ end
 local function render()
     hitboxes = common.new_hitboxes()
     local ass = assdraw.ass_new()
-    local w, h = mp.get_osd_size()
 
     if not bar_visible then
-        render_ctrl:update("", w, h)
+        osd.data = ""
+        osd:update()
         popup_geo = nil
         add_menu_geo = nil
         return
@@ -2010,6 +1581,35 @@ local function render()
         cfg.THUMB_WBORDER_ALPHA,
         cfg.THUMB_WBORDER_WIDTH
     )
+
+    local measure_osd = mp.create_osd_overlay("ass-events")
+    measure_osd.hidden = true
+    measure_osd.compute_bounds = true
+
+    local function measure_text_width(text, font_size, font)
+        local f = font or cfg.UI_FONT
+        local osd_w, osd_h = mp.get_osd_size()
+
+        measure_osd.res_x = osd_w
+        measure_osd.res_y = osd_h
+
+        measure_osd.data =
+            string.format(
+            "{\\pos(1000,1000)\\an5\\fn%s\\fs%d" .. "\\1c&HFFFFFF&\\1a&H00&\\bord0\\shad0\\b0}%s",
+            f,
+            font_size,
+            text
+        )
+
+        local res = measure_osd:update()
+
+        if res and res.x0 and res.x1 then
+            return res.x1 - res.x0
+        end
+
+        -- Fallback only if libass does not return bounds.
+        return utf8_char_count(text) * font_size * 0.5
+    end
 
     if hovering_seek and hovered_chapter and hovered_chapter.title then
         local text_w = measure_text_width(
@@ -2175,20 +1775,10 @@ local function render()
         settings_menu_geo = nil
     end
 
-    render_ctrl:update(ass.text, w, h)
-end
-
-local function schedule_render()
-    if render_timer then
-        return -- Already scheduled
-    end
-    render_timer = mp.add_timeout(
-        0.016, -- ~60fps frame time
-        function()
-            render_timer = nil
-            render()
-        end
-    )
+    osd.data = ass.text
+    osd.res_x = screen_w
+    osd.res_y = screen_h
+    osd:update()
 end
 
 --------------------------------------------------------------------------------
@@ -2235,6 +1825,9 @@ end
 local function restart_hide_timer()
     if hide_timer then
         hide_timer:kill()
+    end
+    if not file_loaded then
+        return
     end
     hide_timer =
         mp.add_timeout(
@@ -2455,26 +2048,10 @@ local function on_mouse_move()
             break
         end
     end
-    local hover_state = hovering_hitbox
-
-    if hover_state ~= last_osc_hover then
-        last_osc_hover = hover_state
-
-        mp.commandv(
-            "script-message",
-            "python-bridge",
-            "osc-hover",
-            tostring(hover_state)
-        )
-    end
+    mp.commandv("script-message", "python-bridge", "osc-hover", tostring(hovering_hitbox))
 
     if mouse_in_active_zone() then
-        if not bar_visible then
-            show_bar()
-        else
-            restart_hide_timer()
-            render()
-        end
+        show_bar()
     elseif bar_visible then
         render()
     end
@@ -2748,18 +2325,12 @@ mp.observe_property(
     "osd-dimensions",
     "native",
     function(_, val)
-        if not val or not val.w or not val.h or val.w <= 0 or val.h <= 0 then
+        if not val then
             return
         end
-        if screen_w ~= val.w or screen_h ~= val.h then
-            screen_w = val.w
-            screen_h = val.h
-            osd.res_x = screen_w
-            osd.res_y = screen_h
-            if file_loaded then
-                render()
-            end
-        end
+        screen_w = val.w
+        screen_h = val.h
+        render()
     end
 )
 
@@ -2768,7 +2339,7 @@ mp.observe_property(
     "number",
     function(_, v)
         duration = v or 0
-        schedule_render()
+        render()
     end
 )
 mp.observe_property(
@@ -2777,7 +2348,7 @@ mp.observe_property(
     function(_, v)
         position = v or 0
         if bar_visible then
-            schedule_render()
+            render()
         end
     end
 )
@@ -2786,7 +2357,7 @@ mp.observe_property(
     "bool",
     function(_, v)
         paused = v
-        schedule_render()
+        render()
     end
 )
 mp.observe_property(
@@ -2794,7 +2365,7 @@ mp.observe_property(
     "bool",
     function(_, v)
         muted = v
-        schedule_render()
+        render()
     end
 )
 mp.observe_property(
@@ -2802,7 +2373,7 @@ mp.observe_property(
     "number",
     function(_, v)
         volume = v or 100
-        schedule_render()
+        render()
     end
 )
 
@@ -2828,39 +2399,13 @@ mp.register_event(
     end
 )
 
-local file_init_timer = nil
-
-local function on_file_initialized()
-    if not file_loaded then
-        file_loaded = true
-        last_subtitle_sid = nil
-        last_osc_hover = nil
-        bar_visible = true
-    end
-    render()
-end
-
 mp.register_event(
     "file-loaded",
     function()
-        -- Use a micro-timer to batch rapid-fire events
-        if file_init_timer then
-            file_init_timer:kill()
+        local existing = mp.get_property_native("chapter-list", {})
+        if #existing == 0 then
+            load_youtube_chapters()
         end
-        file_init_timer = mp.add_timeout(
-            0.05,
-            function()
-                on_file_initialized()
-
-                -- NEW: auto-load chapters if none exist
-                local existing = mp.get_property_native("chapter-list", {})
-                if #existing == 0 then
-                    load_youtube_chapters()
-                end
-
-                file_init_timer = nil
-            end
-        )
     end
 )
 
@@ -2868,19 +2413,16 @@ mp.observe_property(
     "path",
     "string",
     function(_, v)
-        if v ~= nil and v ~= "" and not file_loaded then
-            -- Path changed but file-loaded hasn't fired yet (edge case)
-            if file_init_timer then
-                file_init_timer:kill()
+        file_loaded = (v ~= nil and v ~= "")
+        if file_loaded then
+            restart_hide_timer()
+        else
+            bar_visible = true
+            if hide_timer then
+                hide_timer:kill()
             end
-            file_init_timer = mp.add_timeout(
-                0.05,
-                function()
-                    on_file_initialized()
-                    file_init_timer = nil
-                end
-            )
         end
+        render()
     end
 )
 

@@ -30,7 +30,7 @@ local M = {}
 
 M.theme_name = "Default Theme"
 M.theme_author = "Lunedor"
-M.theme_variant = "" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
+M.theme_variant = "ZenGlass" -- Replaces this file with script-opts/cadre-themes/<name>.lua when changed
 
 ----------------------------------------------------------
 -- 1. CORE PALETTE (Global Base)
@@ -99,7 +99,6 @@ M.theme_variant = "" -- Replaces this file with script-opts/cadre-themes/<name>.
 -- 4.1. MAIN PANEL (Global Geometry & Background)
 -- =======================================================
 -- M.bar_height_osc       = 90       -- Total height of the bottom control panel
--- M.max_bar_width_osc	  = 800		 -- Maximum width of the bottom control panel, screen_w will strech bar to all size avaiable
 -- M.bar_side_inset_osc   = 24       -- Gap between the OSC and the left/right window edges
 -- M.bar_y_anchor_osc     = "bottom" -- "bottom", "top", or "center"
 -- M.bar_top_inset_osc    = 24       -- Gap above the OSC when top-anchored
@@ -113,7 +112,7 @@ M.theme_variant = "" -- Replaces this file with script-opts/cadre-themes/<name>.
 -- 4.2. LAYOUT & SLOTS (Button Placement)
 -- =======================================================
 -- Supported buttons: prev, seek_back, play, pause, seek_forward, next, stop,
--- volume, volume_slider, mute, add, fullscreen, playlist, time, settings, subtitle.
+-- volume, volume_slider, mute, add, fullscreen, playlist, time, subtitle.
 -- Set a slot to false to remove it. The number controls order.
 
 -- Left Group
@@ -266,24 +265,22 @@ M.theme_variant = "" -- Replaces this file with script-opts/cadre-themes/<name>.
 -- 5. PLAYLIST PANEL (_pl)
 ----------------------------------------------------------
 -- Row appearance
--- M.row_bg_pl				= "0B0E14"	-- Backround color of row backgrounds
--- M.row_bg_alpha_pl		= 18		-- 00 = opaque, FF = invisible
--- M.row_padding_x_pl       = 16      	-- Horizontal inset for row content
--- M.row_gap_pl             = 2       	-- Vertical gap between rows
--- M.row_radius_pl          = 6       	-- Corner radius of row backgrounds
--- M.title_offset_x_pl      = 42      	-- Title start position inside a row
--- M.row_right_inset_x_pl   = 16      	-- Right inset for duration and play icons
--- M.color_hover_pl         = "252A31" 	-- Hovered row background
--- M.alpha_hover_pl         = "40"    	-- 00 = opaque, FF = invisible
--- M.alpha_selected_pl      = "60"    	-- Selected row background alpha
--- M.alpha_current_pl       = "88"    	-- Current row background alpha
--- M.color_index_pl         = "CBD5E1" 	-- Playlist index color
--- M.alpha_index_pl         = "30"    	-- Playlist index alpha
--- M.color_duration_pl      = "CBD5E1" 	-- Duration text color
--- M.alpha_duration_pl      = "00"    	-- Duration text alpha
--- M.icon_size_pl           = 18      	-- Search and row-state icon size
--- M.toolbar_icon_size_pl   = 20      	-- Bottom toolbar icon size
--- M.toolbar_icon_spacing_pl = 34     	-- Bottom toolbar icon spacing
+-- M.row_padding_x_pl       = 16      -- Horizontal inset for row content
+-- M.row_gap_pl             = 2       -- Vertical gap between rows
+-- M.row_radius_pl          = 6       -- Corner radius of row backgrounds
+-- M.title_offset_x_pl      = 42      -- Title start position inside a row
+-- M.row_right_inset_x_pl   = 16      -- Right inset for duration and play icons
+-- M.color_hover_pl         = "252A31" -- Hovered row background
+-- M.alpha_hover_pl         = "40"    -- 00 = opaque, FF = invisible
+-- M.alpha_selected_pl      = "60"    -- Selected row background alpha
+-- M.alpha_current_pl       = "88"    -- Current row background alpha
+-- M.color_index_pl         = "CBD5E1" -- Playlist index color
+-- M.alpha_index_pl         = "30"    -- Playlist index alpha
+-- M.color_duration_pl      = "CBD5E1" -- Duration text color
+-- M.alpha_duration_pl      = "00"    -- Duration text alpha
+-- M.icon_size_pl           = 18      -- Search and row-state icon size
+-- M.toolbar_icon_size_pl   = 20      -- Bottom toolbar icon size
+-- M.toolbar_icon_spacing_pl = 34     -- Bottom toolbar icon spacing
 
 -- Geometry & Layout
 -- M.panel_width_pl       = 420		 -- Width of the playlist side-panel
