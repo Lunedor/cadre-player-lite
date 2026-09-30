@@ -32,6 +32,8 @@ local INDEX_COLOR = common.bgr(theme.color_index_pl or theme.color_dim_pl or the
 local DURATION_COLOR = common.bgr(theme.color_duration_pl or theme.color_dim_pl or theme.dim_color or "CBD5E1")
 local ICON_DIM_A = theme.alpha_icon_dim_pl or theme.alpha_icon_dim or "60"
 
+local ROW_BG = common.bgr(theme.row_bg_pl or BARBG or "0B0E14")
+local ROW_BG_ALPHA = theme.row_bg_alpha_pl or ALPHA_BAR_BG or "18"
 local ROW_HEIGHT = theme.row_height_pl or theme.row_height or 42
 local ROW_PADDING_X = theme.row_padding_x_pl or 16
 local ROW_GAP = theme.row_gap_pl or 2
@@ -785,6 +787,10 @@ local function write_m3u8(path, entries)
 end
 
 local function do_save_playlist()
+    if #items == 0 then
+        mp.osd_message("Playlist is empty", 1.5)
+        return
+    end
     local path =
         common.save_file_dialog(
         {
@@ -979,37 +985,39 @@ local function render()
         local is_selected = selected_indices[real_idx] == true
         local is_drop_target = drag.active and drag.current_target == real_idx
         local is_hovered = mouse_x >= L.x1 and mouse_x <= L.x2 and mouse_y >= row_y1 and mouse_y <= row_y2
+        local row_color
+        local row_alpha
 
-        if is_hovered then
-            draw_rrect(ass, L.x1 + 6, row_y1, L.x2 - 6 - SCROLLBAR_WIDTH, row_y2, ROW_RADIUS, HOVER_COLOR, HOVER_ALPHA)
+        if is_current and is_selected then
+            row_color = NOW_PLAYING_COLOR
+            row_alpha = string.format(
+            "%02X",
+            math.max(0, tonumber(CURRENT_ALPHA, 16) - 0x10)
+        )
+        elseif is_current then
+            row_color = NOW_PLAYING_COLOR
+            row_alpha = CURRENT_ALPHA
+        elseif is_selected then
+            row_color = SELECTED_COLOR
+            row_alpha = SELECTED_ALPHA
+        elseif is_hovered then
+            row_color = HOVER_COLOR
+            row_alpha = HOVER_ALPHA
+        else
+            row_color = ROW_BG
+            row_alpha = ROW_BG_ALPHA
         end
 
-        if is_selected then
-            draw_rrect(
-                ass,
-                L.x1 + 6,
-                row_y1,
-                L.x2 - 6 - SCROLLBAR_WIDTH,
-                row_y2,
-                ROW_RADIUS,
-                SELECTED_COLOR,
-                SELECTED_ALPHA
-            )
-            draw_rrect(ass, L.x1 + 6, row_y1, L.x1 + 9, row_y2, 1, SELECTED_COLOR, "20")
-        end
-
-        if is_current then
-            draw_rrect(
-                ass,
-                L.x1 + 6,
-                row_y1,
-                L.x2 - 6 - SCROLLBAR_WIDTH,
-                row_y2,
-                ROW_RADIUS,
-                NOW_PLAYING_COLOR,
-                CURRENT_ALPHA
-            )
-        end
+        draw_rrect(
+            ass,
+            L.x1 + 6,
+            row_y1,
+            L.x2 - 6 - SCROLLBAR_WIDTH,
+            row_y2,
+            ROW_RADIUS,
+            row_color,
+            row_alpha
+        )
 
         if is_drop_target then
             ass:new_event()
@@ -1427,27 +1435,6 @@ local function on_mbtn_left(event)
                         return
                     end
                 end
-                return
-            end
-        end
-
-        -- Handle toolbar button clicks
-        if mouse_y >= L.toolbar_y1 then
-            if mouse_x >= L.x2 - 160 and mouse_x <= L.x2 - 160 + 32 then
-                toggle_shuffle()
-                render()
-                return
-            elseif mouse_x >= L.x2 - 120 and mouse_x <= L.x2 - 120 + 32 then
-                cycle_repeat_mode()
-                render()
-                return
-            elseif mouse_x >= L.x2 - 80 and mouse_x <= L.x2 - 80 + 32 then
-                save_playlist()
-                render()
-                return
-            elseif mouse_x >= L.x2 - 40 and mouse_x <= L.x2 - 40 + 32 then
-                load_playlist()
-                render()
                 return
             end
         end
